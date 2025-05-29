@@ -10,7 +10,7 @@ require 'bundler/setup'
 
 require 'colorize'
 require 'io/console'
-require 'serialport'
+require 'rubyserial'
 
 SERIAL_BAUD = 921_600
 

@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
 source 'https://rubygems.org'
+ruby file: ".ruby-version"
 
 gem 'colorize'
 gem 'elftools'
 
 group :uart do
     gem 'ruby-progressbar'
-    gem 'serialport'
+    gem 'rubyserial'
 end
 
 group :development do
