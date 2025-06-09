@@ -81,6 +81,11 @@ following.**
 ### Common for both
 
 1. Make a single `FAT32` partition named `boot`.
+    ```bash
+    # on mac os
+    $ diskutil list
+    $ diskutil eraseDisk "ms-dos fat32" boot MBRFormat /dev/diskN
+    ```
 2. On the card, generate a file named `config.txt` with the following contents:
 
 ```txt
@@ -101,6 +106,12 @@ init_uart_clock=48000000
     - [fixup4.dat](https://github.com/raspberrypi/firmware/raw/master/boot/fixup4.dat)
     - [start4.elf](https://github.com/raspberrypi/firmware/raw/master/boot/start4.elf)
     - [bcm2711-rpi-4-b.dtb](https://github.com/raspberrypi/firmware/raw/master/boot/bcm2711-rpi-4-b.dtb)
+
+### RPi 5
+
+3. Copy the following files from the [Raspberry Pi firmware repo](https://github.com/raspberrypi/firmware/tree/master/boot) onto the SD card:
+    - [bcm2712-rpi-5-b.dtb](https://github.com/raspberrypi/firmware/raw/master/boot/bcm2712-rpi-5-b.dtb)
+
 4. Run `BSP=rpi4 make`.
 
 

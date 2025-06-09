@@ -1,6 +1,6 @@
 [package]
 name = "mingo"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Andre Richter <andre.o.richter@gmail.com>"]
 edition = "2021"
 
@@ -9,8 +9,10 @@ lto = true
 
 [features]
 default = []
-bsp_rpi3 = []
-bsp_rpi4 = []
+bsp_rpi3 = ["tock-registers"]
+bsp_rpi4 = ["tock-registers"]
+bsp_rpi5 = ["tock-registers"]
+all = ["bsp_rpi3", "bsp_rpi4", "bsp_rpi5"]
 
 [[bin]]
 name = "kernel"
@@ -21,6 +23,9 @@ path = "src/main.rs"
 ##--------------------------------------------------------------------------------------------------
 
 [dependencies]
+# Optional dependencies
+tock-registers = { version = "0.8.x", default-features = false, features = ["register_types"], optional = true }
+
 # Platform specific dependencies
 [target.'cfg(target_arch = "aarch64")'.dependencies]
-aarch64-cpu = { version = "9.x.x" }
+aarch64-cpu = { version = "10" }

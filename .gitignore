@@ -9,3 +9,5 @@ node_modules
 Gemfile.lock
 package*.json
 vendor
+rpi_files
+TODO.md
