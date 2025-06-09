@@ -1,0 +1,20 @@
+# Tell firmware to leave the PCIe controller up
+pciex4_reset=0
+
+# enable uart console=serial0, 115200
+enable_uart=1
+
+# enable RP1 UART0 and doesn't reset RP1 before starting OS (RP1 is reset by default)
+#enable_rp1_uart=1
+
+os_check=0
+
+arm_64bit=1
+kernel_address=0x80000
+kernel=kernel8.img
+
+[all]
+# enable UART0 (GPIO's UART)
+dtparam=uart0=on
+
+# cmdline.txt by adding console=ttyAMA0,115200

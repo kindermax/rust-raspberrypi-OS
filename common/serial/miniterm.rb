@@ -10,9 +10,10 @@ require 'bundler/setup'
 
 require 'colorize'
 require 'io/console'
-require 'serialport'
+require 'rubyserial'
 
-SERIAL_BAUD = 921_600
+# SERIAL_BAUD = 921_600
+SERIAL_BAUD = 230_400 # for mac os
 
 class ConnectionError < StandardError; end
 
@@ -23,6 +24,8 @@ class MiniTerm
         @target_serial_name = serial_name
         @target_serial = nil
         @host_console = IO.console
+
+        puts "Provided serial name #{serial_name}"
     end
 
     private
@@ -44,10 +47,10 @@ class MiniTerm
     def open_serial
         wait_for_serial
 
-        @target_serial = SerialPort.new(@target_serial_name, SERIAL_BAUD, 8, 1, SerialPort::NONE)
+        @target_serial = Serial.new(@target_serial_name, SERIAL_BAUD)
 
         # Ensure all output is immediately flushed to the device.
-        @target_serial.sync = true
+        # @target_serial.sync = true
     rescue Errno::EACCES => e
         puts "[#{@name_short}] 🚫 #{e.message} - Maybe try with 'sudo'"
         exit
@@ -64,7 +67,7 @@ class MiniTerm
         # Receive from target and print on host console.
         target_to_host = Thread.new do
             loop do
-                char = @target_serial.getc
+                char = @target_serial.read 1
 
                 raise ConnectionError if char.nil?
 
@@ -84,12 +87,16 @@ class MiniTerm
                 break
             end
 
-            @target_serial.putc(c)
+            @target_serial.write(c.to_s)
         end
     end
 
     def connection_reset
-        @target_serial&.close
+        begin
+            @target_serial.close if @target_serial && @target_serial.instance_variable_get(:@open)
+        rescue RubySerial::Error, IOError
+            # Ignore errors if already closed
+        end
         @target_serial = nil
         @host_console.cooked!
     end
@@ -107,6 +114,7 @@ class MiniTerm
 
         puts
         puts "[#{@name_short}] ⚡ #{"Unexpected Error: #{error.inspect}".light_red}"
+        puts error.backtrace
     end
 
     public

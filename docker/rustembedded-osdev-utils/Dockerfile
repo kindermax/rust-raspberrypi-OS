@@ -58,7 +58,7 @@ RUN set -ex;                                      \
     # QEMU
     git clone https://gitlab.com/qemu-project/qemu.git;        \
     cd qemu;                                                   \
-    git checkout tags/v6.1.0;                                  \
+    git checkout tags/v9.2.0;                                  \
     ./configure --target-list=aarch64-softmmu --enable-modules \
         --enable-tcg-interpreter --enable-debug-tcg            \
         --python=/usr/bin/python3;                             \
@@ -92,6 +92,7 @@ ENV LANG=en_US.UTF-8   \
 # Openocd
 COPY rpi3.cfg /openocd/
 COPY rpi4.cfg /openocd/
+COPY rpi5.cfg /openocd/
 
 # GDB
 COPY auto /root/.gdbinit.d/auto
