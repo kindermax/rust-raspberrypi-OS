@@ -12,8 +12,11 @@ use core::sync::atomic::{AtomicBool, Ordering};
 // Global instances
 //--------------------------------------------------------------------------------------------------
 
-// TODO: early uart (rp5 specific, may be under cfg ?)
-pub static UART: device_driver::PL011EarlyUart = device_driver::PL011EarlyUart::new();
+#[cfg(all(feature = "bsp_rpi5", feature = "early-uart"))]
+static PL011_UART: device_driver::PL011Uart =
+    unsafe { device_driver::PL011Uart::new(mmio::PL011_EARLY_UART_START) };
+
+#[cfg(not(all(feature = "bsp_rpi5", feature = "early-uart")))]
 static PL011_UART: device_driver::PL011Uart =
     unsafe { device_driver::PL011Uart::new(mmio::PL011_UART_START) };
 static GPIO: device_driver::GPIO = unsafe { device_driver::GPIO::new(mmio::GPIO_START) };
@@ -29,13 +32,6 @@ fn post_init_uart() -> Result<(), &'static str> {
     Ok(())
 }
 
-/// This must be called only after successful init of the UART driver.
-fn post_init_early_uart() -> Result<(), &'static str> {
-    console::register_console(&UART);
-
-    Ok(())
-}
-
 /// This must be called only after successful init of the GPIO driver.
 fn post_init_gpio() -> Result<(), &'static str> {
     GPIO.map_pl011_uart();
@@ -45,14 +41,6 @@ fn post_init_gpio() -> Result<(), &'static str> {
 fn driver_uart() -> Result<(), &'static str> {
     let uart_descriptor =
         generic_driver::DeviceDriverDescriptor::new(&PL011_UART, Some(post_init_uart));
-    generic_driver::driver_manager().register_driver(uart_descriptor);
-
-    Ok(())
-}
-
-fn driver_early_uart() -> Result<(), &'static str> {
-    let uart_descriptor =
-        generic_driver::DeviceDriverDescriptor::new(&UART, Some(post_init_early_uart));
     generic_driver::driver_manager().register_driver(uart_descriptor);
 
     Ok(())
@@ -80,8 +68,7 @@ pub unsafe fn init() -> Result<(), &'static str> {
         return Err("Init already done");
     }
 
-    driver_early_uart()?;
-    // driver_uart()?;
+    driver_uart()?;
     // driver_gpio()?;
 
     INIT_DONE.store(true, Ordering::Relaxed);
