@@ -12,6 +12,11 @@ use core::sync::atomic::{AtomicBool, Ordering};
 // Global instances
 //--------------------------------------------------------------------------------------------------
 
+#[cfg(all(feature = "bsp_rpi5", feature = "early-uart"))]
+static PL011_UART: device_driver::PL011Uart =
+    unsafe { device_driver::PL011Uart::new(mmio::PL011_EARLY_UART_START) };
+
+#[cfg(not(all(feature = "bsp_rpi5", feature = "early-uart")))]
 static PL011_UART: device_driver::PL011Uart =
     unsafe { device_driver::PL011Uart::new(mmio::PL011_UART_START) };
 static GPIO: device_driver::GPIO = unsafe { device_driver::GPIO::new(mmio::GPIO_START) };
@@ -64,7 +69,7 @@ pub unsafe fn init() -> Result<(), &'static str> {
     }
 
     driver_uart()?;
-    driver_gpio()?;
+    // driver_gpio()?;
 
     INIT_DONE.store(true, Ordering::Relaxed);
     Ok(())
