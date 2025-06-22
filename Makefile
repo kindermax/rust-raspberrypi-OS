@@ -65,6 +65,7 @@ else ifeq ($(BSP),rpi5)
     JTAG_BOOT_IMAGE   = ./X1_JTAG_boot/jtag_boot_rpi5.img
     LD_SCRIPT_PATH    = $(shell pwd)/src/bsp/raspberrypi
     RUSTC_MISC_ARGS   = -C target-cpu=cortex-a76
+    CHAINBOOT_DEMO_PAYLOAD = demo_payload_rpi5.img
 endif
 
 # Export for build.rs.
@@ -138,11 +139,7 @@ ifeq ($(shell uname -s),Linux)
 
     DOCKER_MINITERM = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_IMAGE)
 
-    DOCKER_CHAINBOOT = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_IMAGE)
-    DOCKER_JTAGBOOT  = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_ARG_DIR_JTAG) $(DOCKER_IMAGE)
-    DOCKER_OPENOCD   = $(DOCKER_CMD_DEV) $(DOCKER_ARG_NET) $(DOCKER_IMAGE)
-else
-    DOCKER_OPENOCD   = echo "Not yet supported on non-Linux systems."; \#
+    DOCKER_CHAINBOOT = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_IMAGE) 
 endif
 
 
@@ -219,7 +216,7 @@ miniterm:
 
 ## Push the kernel to the real HW target
 chainboot: $(KERNEL_BIN)
-	@$(DOCKER_CHAINBOOT) $(EXEC_MINIPUSH) $(DEV_SERIAL) $(KERNEL_BIN)
+	@$(DOCKER_CHAINBOOT) $(EXEC_MINIPUSH) $(DEV_SERIAL) $(CHAINBOOT_DEMO_PAYLOAD)
 
 ##------------------------------------------------------------------------------
 ## Run clippy
