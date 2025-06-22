@@ -2,7 +2,7 @@
 ##
 ## Copyright (c) 2017-2023 Andre Richter <andre.o.richter@gmail.com>
 ## Copyright (c) 2019-2023 Nao Taco <naotaco@gmail.com>
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 ARG VCS_REF
 ARG GCC_AARCH64=https://developer.arm.com/-/media/Files/downloads/gnu-a/10.3-2021.07/binrel/gcc-arm-10.3-2021.07-aarch64-aarch64-none-elf.tar.xz
@@ -18,50 +18,56 @@ COPY Gemfile .
 
 RUN set -ex;                                      \
     tempPkgs='                                    \
-        automake                                  \
-        bison                                     \
-        build-essential                           \
-        flex                                      \
-        git                                       \
-        libtool                                   \
-        ninja-build                               \
-        pkg-config                                \
-        wget                                      \
+    automake                                  \
+    bison                                     \
+    build-essential                           \
+    flex                                      \
+    git                                       \
+    libtool                                   \
+    ninja-build                               \
+    pkg-config                                \
+    wget                                      \
     ';                                            \
     apt-get update;                               \
     apt-get install -q -y --no-install-recommends \
-        $tempPkgs                                 \
-        # persistent packages
-        ca-certificates                           \
-        gdb-multiarch                             \
-        libpixman-1-dev                           \
-        libglib2.0-dev                            \
-        libusb-1.0.0-dev                          \
-        locales                                   \
-        python3                                   \
-        ruby                                      \
-        ruby-dev                                  \
-    ;                                             \
+    $tempPkgs                                 \
+    # persistent packages
+    ca-certificates                           \
+    gdb-multiarch                             \
+    libpixman-1-dev                           \
+    libglib2.0-dev                            \
+    libusb-1.0.0-dev                          \
+    locales                                   \
+    python3                                   \
+    ruby                                      \
+    ruby-dev
+
+RUN ruby --version
+
+RUN \
     # GCC AArch64 tools
     if [ "$(uname -m)" = "aarch64" ]; then wget ${GCC_AARCH64}; else wget ${GCC_X86_64}; fi; \
     tar -xf gcc-arm-10*;                                                                     \
     cp                                                                                       \
-        gcc-arm-10*/bin/aarch64-none-elf-objdump                                             \
-        gcc-arm-10*/bin/aarch64-none-elf-readelf                                             \
-        gcc-arm-10*/bin/aarch64-none-elf-nm                                                  \
-        /usr/local/bin/;                                                                     \
-    rm -rf gcc-arm-10*;                                                                      \
+    gcc-arm-10*/bin/aarch64-none-elf-objdump                                             \
+    gcc-arm-10*/bin/aarch64-none-elf-readelf                                             \
+    gcc-arm-10*/bin/aarch64-none-elf-nm                                                  \
+    /usr/local/bin/;                                                                     \
+    rm -rf gcc-arm-10*
+
+RUN \
     # Ruby dependencies
     gem install bundler;                             \
+    bundler env; \
     bundle config set --local without 'development'; \
     bundle install --retry 3;                        \
     # QEMU
     git clone https://gitlab.com/qemu-project/qemu.git;        \
     cd qemu;                                                   \
-    git checkout tags/v9.2.0;                                  \
+    git checkout tags/v10.2.0;                                  \
     ./configure --target-list=aarch64-softmmu --enable-modules \
-        --enable-tcg-interpreter --enable-debug-tcg            \
-        --python=/usr/bin/python3;                             \
+    --enable-tcg-interpreter --enable-debug-tcg            \
+    --python=/usr/bin/python3;                             \
     make -j10;                                                 \
     make install;                                              \
     cd ..;                                                     \
