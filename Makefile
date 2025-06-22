@@ -11,11 +11,14 @@ include ./common/operating_system.mk
 ##--------------------------------------------------------------------------------------------------
 
 # Default board
-BSP ?= rpi4
+BSP ?= rpi5
+SDCARD_DIR ?= /Volumes/BOOT
 
 # Default to a serial device name that is common in Linux.
 # DEV_SERIAL ?= /dev/ttyUSB0
 DEV_SERIAL ?= /dev/tty.usbserial-0001
+
+RPI5_EARLY_UART ?=
 
 ##--------------------------------------------------------------------------------------------------
 ## BSP-specific configuration values
@@ -88,10 +91,12 @@ RUSTFLAGS = $(RUSTC_MISC_ARGS)                   \
     -C link-arg=--script=$(KERNEL_LINKER_SCRIPT)
 
 RUSTFLAGS_PEDANTIC = $(RUSTFLAGS) \
-    -D warnings                   \
     -D missing_docs
 
 FEATURES      = --features bsp_$(BSP)
+ifeq ($(RPI5_EARLY_UART),1)
+    FEATURES      = --features bsp_$(BSP),early-uart
+endif
 COMPILER_ARGS = --target=$(TARGET) \
     $(FEATURES)                    \
     --release
@@ -149,7 +154,7 @@ $(LAST_BUILD_CONFIG):
 ##------------------------------------------------------------------------------
 $(KERNEL_ELF): $(KERNEL_ELF_DEPS)
 	$(call color_header, "Compiling kernel ELF - $(BSP)")
-	@RUSTFLAGS="$(RUSTFLAGS_PEDANTIC)" $(RUSTC_CMD)
+	RUSTFLAGS="$(RUSTFLAGS_PEDANTIC)" $(RUSTC_CMD)
 
 ##------------------------------------------------------------------------------
 ## Generate the stripped kernel binary
@@ -161,6 +166,14 @@ $(KERNEL_BIN): $(KERNEL_ELF)
 	@echo $(KERNEL_BIN)
 	$(call color_progress_prefix, "Size")
 	$(call disk_usage_KiB, $(KERNEL_BIN))
+
+sdcard: $(KERNEL_BIN)
+	$(call color_header, "Load to sdcard")
+	cp $(KERNEL_BIN) $(SDCARD_DIR)
+	ls -lh $(SDCARD_DIR)
+	cp config.txt $(SDCARD_DIR) 
+	cat $(SDCARD_DIR)/config.txt
+	diskutil unmount $(SDCARD_DIR)
 
 ##------------------------------------------------------------------------------
 ## Generate the documentation

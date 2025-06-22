@@ -46,9 +46,12 @@ pub(super) mod map {
         // pub const GPIO_START:       usize = START + GPIO_OFFSET;
         // pub const PL011_UART_START: usize = START + UART_OFFSET;
 
+        // peripheral base address
         #[allow(dead_code)]
-        pub const START:            usize =         0x40000000;
-        pub const GPIO_START:       usize =         0x400d0000;
-        pub const PL011_UART_START: usize =         0x40030000;
+        pub const START:            usize =            0x107c000000;
+        pub const GPIO_START:       usize =            0x1f000d0000;
+        pub const PL011_UART_START: usize =         0x1c00030000; // w/o pcie
+        // pub const PL011_UART_START: usize =         0x1f00030000; // w/ pcie
+        pub const PL011_EARLY_UART_START: usize = 0x107d001000;
     }
 }
