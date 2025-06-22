@@ -1,0 +1,10 @@
+arm_64bit=1
+kernel=kernel8.img
+kernel_address=0x80000
+os_check=0
+
+[all]
+pciex4_reset=0
+enable_rp1_uart=1
+
+#enable_jtag_gpio=1
