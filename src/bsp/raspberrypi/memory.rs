@@ -11,6 +11,8 @@
 /// The board's physical memory map.
 #[rustfmt::skip]
 pub(super) mod map {
+    #[allow(dead_code)]
+    pub const BOARD_DEFAULT_LOAD_ADDRESS: usize =        0x8_0000;
 
     #[allow(dead_code)]
     pub const GPIO_OFFSET:         usize = 0x0020_0000;
@@ -50,8 +52,19 @@ pub(super) mod map {
         #[allow(dead_code)]
         pub const START:            usize =            0x107c000000;
         pub const GPIO_START:       usize =            0x1f000d0000;
-        pub const PL011_UART_START: usize =         0x1c00030000; // w/o pcie
+        pub const PL011_UART_START: usize =            0x1c00030000; // w/o pcie
         // pub const PL011_UART_START: usize =         0x1f00030000; // w/ pcie
         pub const PL011_EARLY_UART_START: usize = 0x107d001000;
     }
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// Public Code
+//--------------------------------------------------------------------------------------------------
+
+/// The address on which the Raspberry firmware loads every binary by default.
+#[inline(always)]
+pub fn board_default_load_addr() -> *const u64 {
+    map::BOARD_DEFAULT_LOAD_ADDRESS as _
 }

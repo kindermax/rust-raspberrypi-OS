@@ -47,7 +47,6 @@ class MiniPush < MiniTerm
                     else
                         # A normal character resets token counting.
                         count = 0
-
                         print c
                     end
                 end
