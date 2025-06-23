@@ -11,7 +11,6 @@
 //!
 //! crate::time::arch_time
 
-#[cfg(feature = "bsp_rpi3")]
 use crate::warn;
 use aarch64_cpu::{asm::barrier, registers::*};
 use core::{
@@ -144,7 +143,6 @@ pub fn uptime() -> Duration {
 }
 
 /// Spin for a given duration.
-#[cfg(feature = "bsp_rpi3")]
 pub fn spin_for(duration: Duration) {
     let curr_counter_value = read_cntpct();
 

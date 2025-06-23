@@ -6,4 +6,4 @@ os_check=0
 pciex4_reset=0
 enable_rp1_uart=1
 
-#enable_jtag_gpio=1
+enable_jtag_gpio=1

@@ -1,0 +1,3 @@
+platform select remote-gdb-server
+process connect connect://localhost:3333
+breakpoint set --hardware --name kernel_main

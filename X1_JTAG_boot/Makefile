@@ -11,11 +11,11 @@ include ../common/operating_system.mk
 ##--------------------------------------------------------------------------------------------------
 
 # Default to the RPi3.
-BSP ?= rpi3
+BSP ?= rpi5
 
 # Default to a serial device name that is common in Linux.
 DEV_SERIAL ?= /dev/ttyUSB0
-
+RPI5_EARLY_UART ?=
 
 
 ##--------------------------------------------------------------------------------------------------
@@ -45,6 +45,23 @@ else ifeq ($(BSP),rpi4)
     READELF_BINARY    = aarch64-none-elf-readelf
     LD_SCRIPT_PATH    = $(shell pwd)/src/bsp/raspberrypi
     RUSTC_MISC_ARGS   = -C target-cpu=cortex-a72
+else ifeq ($(BSP),rpi5)
+    TARGET            = aarch64-unknown-none-softfloat
+    KERNEL_BIN        = kernel8.img
+    QEMU_BINARY       = qemu-system-aarch64
+    QEMU_MACHINE_TYPE = virt
+    ifeq ($(SERIAL),true)
+    	QEMU_RELEASE_ARGS = -serial stdio -display none
+    else
+    	QEMU_RELEASE_ARGS = -d in_asm -display none
+    endif
+    OBJDUMP_BINARY    = aarch64-none-elf-objdump
+    NM_BINARY         = aarch64-none-elf-nm
+    READELF_BINARY    = aarch64-none-elf-readelf
+    OPENOCD_ARG       = -f ./cmsis-dap.cfg -f ./rpi5-openocd.cfg
+    JTAG_BOOT_IMAGE   = ./X1_JTAG_boot/jtag_boot_rpi5.img
+    LD_SCRIPT_PATH    = $(shell pwd)/src/bsp/raspberrypi
+    RUSTC_MISC_ARGS   = -C target-cpu=cortex-a76
 endif
 
 # Export for build.rs.
@@ -74,10 +91,12 @@ RUSTFLAGS = $(RUSTC_MISC_ARGS)                   \
     -C link-arg=--script=$(KERNEL_LINKER_SCRIPT)
 
 RUSTFLAGS_PEDANTIC = $(RUSTFLAGS) \
-    -D warnings                   \
     -D missing_docs
 
 FEATURES      = --features bsp_$(BSP)
+ifeq ($(RPI5_EARLY_UART),1)
+    FEATURES      = --features bsp_$(BSP),early-uart
+endif
 COMPILER_ARGS = --target=$(TARGET) \
     $(FEATURES)                    \
     --release

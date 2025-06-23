@@ -4,7 +4,10 @@
 
 //! Driver support.
 
-use crate::synchronization::{interface::Mutex, NullLock};
+use crate::{
+    println,
+    synchronization::{interface::Mutex, NullLock},
+};
 
 //--------------------------------------------------------------------------------------------------
 // Private Definitions
@@ -39,7 +42,7 @@ pub mod interface {
     }
 }
 
-/// Tpye to be used as an optional callback after a driver's init() has run.
+/// Type to be used as an optional callback after a driver's init() has run.
 pub type DeviceDriverPostInitCallback = unsafe fn() -> Result<(), &'static str>;
 
 /// A descriptor for device drivers.
@@ -149,6 +152,15 @@ impl DriverManager {
                     );
                 }
             }
+        });
+    }
+
+    /// Enumerate all registered device drivers.
+    pub fn enumerate(&self) {
+        let mut i: usize = 1;
+        self.for_each_descriptor(|descriptor| {
+            println!("      {}. {}", i, descriptor.device_driver.compatible());
+            i += 1;
         });
     }
 }

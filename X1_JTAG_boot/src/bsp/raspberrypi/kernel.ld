@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT OR Apache-2.0
  *
- * Copyright (c) 2018-2023 Andre Richter <andre.o.richter@gmail.com>
+ * Copyright (c) 2018-2022 Andre Richter <andre.o.richter@gmail.com>
  */
 
 __rpi_phys_dram_start_addr = 0;
@@ -42,6 +42,7 @@ SECTIONS
         __boot_core_stack_end_exclusive = .; /*   |             */
     } :segment_boot_core_stack
 
+
     /***********************************************************************************************
     * Code + RO Data + Global Offset Table
     ***********************************************************************************************/
@@ -52,6 +53,7 @@ SECTIONS
         *(.text._start_rust)      /* The Rust entry point */
         *(.text*)                 /* Everything else */
     } :segment_code
+
 
     .rodata : ALIGN(8) { *(.rodata*) } :segment_code
 

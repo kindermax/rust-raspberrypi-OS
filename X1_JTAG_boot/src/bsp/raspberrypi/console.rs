@@ -2,13 +2,15 @@
 //
 // Copyright (c) 2018-2023 Andre Richter <andre.o.richter@gmail.com>
 
-//! BSP Processor code.
+//! BSP console facilities.
+
+use crate::console;
 
 //--------------------------------------------------------------------------------------------------
-// Public Definitions
+// Public Code
 //--------------------------------------------------------------------------------------------------
 
-/// Used by `arch` code to find the early boot core.
-#[no_mangle]
-#[link_section = ".text._start_arguments"]
-pub static BOOT_CORE_ID: u64 = 0;
+/// Return a reference to the console.
+pub fn console() -> &'static dyn console::interface::All {
+    &super::driver::PL011_UART
+}
