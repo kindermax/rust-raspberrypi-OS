@@ -141,6 +141,22 @@ get a USB serial cable to get the full experience.
 [\[1\]]: https://www.amazon.de/dp/B0757FQ5CX/ref=cm_sw_r_tw_dp_U_x_ozGRDbVTJAG4Q
 [\[2\]]: https://www.adafruit.com/product/954
 
+## Chainboot
+
+```
+git switch chainloader
+cp kernel8_chainloader_debug_uart.img /Volumes/BOOT/kernel8.img
+# or cp kernel8_chainloader_rp1_uart.img /Volumes/BOOT/kernel8.img
+```
+
+## Openocd
+
+```bash
+make jtagboot
+make openocd
+make gdb-opt0
+```
+
 ## 🙌 Acknowledgements
 
 The original version of the tutorials started out as a fork of [Zoltan
