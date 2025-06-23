@@ -30,12 +30,15 @@ class MiniPush < MiniTerm
         puts "[#{@name_short}] 🔌 Please power the target now"
 
         # Timeout for the request token starts after the first sign of life was received.
-        received = @target_serial.readpartial(4096)
-        Timeout.timeout(10) do
+        received = @target_serial.read(4096)
+        Timeout.timeout(60) do
             count = 0
 
             loop do
-                raise ProtocolError if received.nil?
+                if received.empty?
+                    received = @target_serial.read(4096)
+                    next
+                end
 
                 received.chars.each do |c|
                     if c == "\u{3}"
@@ -49,7 +52,7 @@ class MiniPush < MiniTerm
                     end
                 end
 
-                received = @target_serial.readpartial(4096)
+                received = @target_serial.read(4096)
             end
         end
     end
@@ -60,7 +63,8 @@ class MiniPush < MiniTerm
     end
 
     def send_size
-        @target_serial.print([@payload_size].pack('L<'))
+        @target_serial.write([@payload_size].pack('L<'))
+        sleep(0.1) # a little delay for device to send a response
         raise ProtocolError if @target_serial.read(2) != 'OK'
     end
 

@@ -16,7 +16,8 @@ SDCARD_DIR ?= /Volumes/BOOT
 
 # Default to a serial device name that is common in Linux.
 # DEV_SERIAL ?= /dev/ttyUSB0
-DEV_SERIAL ?= /dev/tty.usbserial-0001
+# DEV_SERIAL ?= /dev/tty.usbserial-0001
+DEV_SERIAL ?= /dev/cu.usbmodem112202
 
 RPI5_EARLY_UART ?=
 
@@ -111,6 +112,7 @@ OBJCOPY_CMD = rust-objcopy \
 EXEC_QEMU          = $(QEMU_BINARY) -M $(QEMU_MACHINE_TYPE)
 EXEC_TEST_DISPATCH = ruby ./common/tests/dispatch.rb
 EXEC_MINITERM      = ruby ./common/serial/miniterm.rb
+EXEC_MINIPUSH      = ruby ./common/serial/minipush.rb
 
 ##------------------------------------------------------------------------------
 ## Dockerization
@@ -130,6 +132,8 @@ ifeq ($(shell uname -s),Linux)
     DOCKER_CMD_DEV = $(DOCKER_CMD_INTERACT) $(DOCKER_ARG_DEV)
 
     DOCKER_MINITERM = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_IMAGE)
+
+    DOCKER_CHAINBOOT = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_IMAGE) 
 endif
 
 
@@ -203,6 +207,10 @@ endif
 ##------------------------------------------------------------------------------
 miniterm:
 	@$(DOCKER_MINITERM) $(EXEC_MINITERM) $(DEV_SERIAL)
+
+## Push the kernel to the real HW target
+chainboot: $(KERNEL_BIN)
+	@$(DOCKER_CHAINBOOT) $(EXEC_MINIPUSH) $(DEV_SERIAL) $(KERNEL_BIN)
 
 ##------------------------------------------------------------------------------
 ## Run clippy
