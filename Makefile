@@ -61,7 +61,7 @@ else ifeq ($(BSP),rpi5)
     OBJDUMP_BINARY    = aarch64-none-elf-objdump
     NM_BINARY         = aarch64-none-elf-nm
     READELF_BINARY    = aarch64-none-elf-readelf
-    OPENOCD_ARG       = -f ./cmsis-dap.cfg -f ./rpi5-openocd.cfg
+    OPENOCD_ARG       = -f ./cmsis-dap.cfg -f ./rpi5-openocd.cfg -c "adapter speed 5000"
     JTAG_BOOT_IMAGE   = ./X1_JTAG_boot/jtag_boot_rpi5.img
     LD_SCRIPT_PATH    = $(shell pwd)/src/bsp/raspberrypi
     RUSTC_MISC_ARGS   = -C target-cpu=cortex-a76
@@ -79,7 +79,7 @@ KERNEL_MANIFEST      = Cargo.toml
 KERNEL_LINKER_SCRIPT = kernel.ld
 LAST_BUILD_CONFIG    = target/$(BSP).build_config
 
-KERNEL_ELF      = target/$(TARGET)/release/kernel
+KERNEL_ELF      = target/$(TARGET)/debug/kernel
 # This parses cargo's dep-info file.
 # https://doc.rust-lang.org/cargo/guide/build-cache.html#dep-info-files
 KERNEL_ELF_DEPS = $(filter-out %: ,$(file < $(KERNEL_ELF).d)) $(KERNEL_MANIFEST) $(LAST_BUILD_CONFIG)
@@ -101,8 +101,7 @@ ifeq ($(RPI5_EARLY_UART),1)
     FEATURES      = --features bsp_$(BSP),early-uart
 endif
 COMPILER_ARGS = --target=$(TARGET) \
-    $(FEATURES)                    \
-    --release
+    $(FEATURES)
 
 RUSTC_CMD   = cargo rustc $(COMPILER_ARGS)
 DOC_CMD     = cargo doc $(COMPILER_ARGS)
@@ -141,6 +140,9 @@ ifeq ($(shell uname -s),Linux)
     DOCKER_CHAINBOOT = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_IMAGE)
     DOCKER_JTAGBOOT  = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_ARG_DIR_JTAG) $(DOCKER_IMAGE)
     DOCKER_OPENOCD   = $(DOCKER_CMD_DEV) $(DOCKER_ARG_NET) $(DOCKER_IMAGE)
+else ifeq ($(shell uname -s),Darwin)
+    DOCKER_OPENOCD   = 
+    DOCKER_GDB = 
 else
     DOCKER_OPENOCD   = echo "Not yet supported on non-Linux systems."; \#
 endif
@@ -277,12 +279,7 @@ openocd:
 
 openocd-local:
 	$(call color_header, "Launching local OpenOCD with lldb")
-	openocd -f ./cmsis-dap.cfg -f ./rpi5-openocd.cfg -c "adapter speed 5000" &
-	OPENOCD_PID=$!
-    PROGRAM=target/aarch64-unknown-none-softfloat/release/kernel
-	lldb $(PROGRAM)
-	# aarch64-elf-gdb -q -x gdb_init "$(PROGRAM)"
-	kill -TERM ${OPENOCD_PID}
+	openocd -f ./cmsis-dap.cfg -f ./rpi5-openocd.cfg -c "adapter speed 5000"
 
 ##------------------------------------------------------------------------------
 ## Start GDB session
@@ -291,7 +288,13 @@ gdb: RUSTC_MISC_ARGS += -C debuginfo=2
 gdb-opt0: RUSTC_MISC_ARGS += -C debuginfo=2 -C opt-level=0
 gdb gdb-opt0: $(KERNEL_ELF)
 	$(call color_header, "Launching GDB")
-	@$(DOCKER_GDB) gdb-multiarch -q $(KERNEL_ELF)
+	@$(DOCKER_GDB) aarch64-elf-gdb -x gdb_init -q $(KERNEL_ELF)
+
+lldb: RUSTC_MISC_ARGS += -C debuginfo=2
+lldb-opt0: RUSTC_MISC_ARGS += -C debuginfo=2 -C opt-level=0
+lldb lldb-opt0: $(KERNEL_ELF)
+	$(call color_header, "Launching LLDB")
+	@$(DOCKER_GDB) lldb $(KERNEL_ELF)
 
 ##--------------------------------------------------------------------------------------------------
 ## Testing targets
