@@ -13,7 +13,7 @@ require 'io/console'
 require 'rubyserial'
 
 # SERIAL_BAUD = 921_600
-SERIAL_BAUD = 230_400 # for mac os
+SERIAL_BAUD = 115_200 # for mac os
 
 class ConnectionError < StandardError; end
 
