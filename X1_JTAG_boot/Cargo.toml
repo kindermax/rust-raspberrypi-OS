@@ -11,6 +11,9 @@ lto = true
 default = []
 bsp_rpi3 = ["tock-registers"]
 bsp_rpi4 = ["tock-registers"]
+bsp_rpi5 = ["tock-registers"]
+early-uart = []                            # rpi5 specific
+all = ["bsp_rpi3", "bsp_rpi4", "bsp_rpi5"]
 
 [[bin]]
 name = "kernel"
@@ -21,10 +24,11 @@ path = "src/main.rs"
 ##--------------------------------------------------------------------------------------------------
 
 [dependencies]
-
 # Optional dependencies
-tock-registers = { version = "0.8.x", default-features = false, features = ["register_types"], optional = true }
+tock-registers = { version = "0.9.x", default-features = false, features = [
+    "register_types",
+], optional = true }
 
 # Platform specific dependencies
 [target.'cfg(target_arch = "aarch64")'.dependencies]
-aarch64-cpu = { version = "9.x.x" }
+aarch64-cpu = { version = "10" }

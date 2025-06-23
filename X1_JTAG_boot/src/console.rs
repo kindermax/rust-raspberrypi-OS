@@ -25,6 +25,7 @@ pub mod interface {
         fn write_fmt(&self, args: fmt::Arguments) -> fmt::Result;
 
         /// Block until the last buffered character has been physically put on the TX wire.
+        #[allow(dead_code)]
         fn flush(&self);
     }
 
@@ -47,6 +48,7 @@ pub mod interface {
         }
 
         /// Return the number of characters read.
+        #[allow(dead_code)]
         fn chars_read(&self) -> usize {
             0
         }
@@ -63,9 +65,11 @@ pub mod interface {
 static CUR_CONSOLE: NullLock<&'static (dyn interface::All + Sync)> =
     NullLock::new(&null_console::NULL_CONSOLE);
 
+
 //--------------------------------------------------------------------------------------------------
 // Public Code
 //--------------------------------------------------------------------------------------------------
+
 use synchronization::interface::Mutex;
 
 /// Register a new console.

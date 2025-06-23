@@ -38,6 +38,11 @@ impl TimeManager {
         Self
     }
 
+    /// The timer's resolution.
+    pub fn resolution(&self) -> Duration {
+        arch_time::resolution()
+    }
+
     /// The uptime since power-on of the device.
     ///
     /// This includes time consumed by firmware and bootloaders.
@@ -46,7 +51,6 @@ impl TimeManager {
     }
 
     /// Spin for a given duration.
-    #[cfg(feature = "bsp_rpi3")]
     pub fn spin_for(&self, duration: Duration) {
         arch_time::spin_for(duration)
     }

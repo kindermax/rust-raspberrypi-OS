@@ -12,6 +12,11 @@ use core::sync::atomic::{AtomicBool, Ordering};
 // Global instances
 //--------------------------------------------------------------------------------------------------
 
+#[cfg(all(feature = "bsp_rpi5", feature = "early-uart"))]
+static PL011_UART: device_driver::PL011Uart =
+    unsafe { device_driver::PL011Uart::new(mmio::PL011_EARLY_UART_START) };
+
+#[cfg(not(all(feature = "bsp_rpi5", feature = "early-uart")))]
 static PL011_UART: device_driver::PL011Uart =
     unsafe { device_driver::PL011Uart::new(mmio::PL011_UART_START) };
 static GPIO: device_driver::GPIO = unsafe { device_driver::GPIO::new(mmio::GPIO_START) };
@@ -57,6 +62,17 @@ fn driver_gpio() -> Result<(), &'static str> {
 /// # Safety
 ///
 /// See child function calls.
+///
+/// # Note
+///
+/// Using atomics here relieves us from needing to use `unsafe` for the static variable.
+///
+/// On `AArch64`, which is the only implemented architecture at the time of writing this,
+/// [`AtomicBool::load`] and [`AtomicBool::store`] are lowered to ordinary load and store
+/// instructions. They are therefore safe to use even with MMU + caching deactivated.
+///
+/// [`AtomicBool::load`]: core::sync::atomic::AtomicBool::load
+/// [`AtomicBool::store`]: core::sync::atomic::AtomicBool::store
 pub unsafe fn init() -> Result<(), &'static str> {
     static INIT_DONE: AtomicBool = AtomicBool::new(false);
     if INIT_DONE.load(Ordering::Relaxed) {
