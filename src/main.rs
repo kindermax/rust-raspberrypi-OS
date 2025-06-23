@@ -150,7 +150,7 @@ unsafe fn kernel_init() -> ! {
 /// The main function running after the early init.
 /// Run to build: BSP=rpi5 RPI5_EARLY_UART=1  make clean sdcard
 fn kernel_main() -> ! {
-    use core::time::Duration;
+    use crate::console::console;
 
     println!("{}", MINILOAD_LOGO);
     // println!("{:^37}", bsp::board_name());

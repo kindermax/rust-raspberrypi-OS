@@ -276,7 +276,7 @@ openocd-local:
 	$(call color_header, "Launching local OpenOCD with lldb")
 	openocd -f ./cmsis-dap.cfg -f ./rpi5-openocd.cfg -c "adapter speed 5000" &
 	OPENOCD_PID=$!
-    PROGRAM=target/aarch64-unknown-none-softfloat/release/kernel
+	PROGRAM=target/aarch64-unknown-none-softfloat/release/kernel
 	lldb $(PROGRAM)
 	# aarch64-elf-gdb -q -x gdb_init "$(PROGRAM)"
 	kill -TERM ${OPENOCD_PID}
