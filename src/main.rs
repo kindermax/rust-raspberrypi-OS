@@ -116,6 +116,7 @@ mod bsp;
 mod console;
 mod cpu;
 mod driver;
+mod exception;
 mod panic_wait;
 mod print;
 mod synchronization;
@@ -143,6 +144,7 @@ unsafe fn kernel_init() -> ! {
 
 /// The main function running after the early init.
 fn kernel_main() -> ! {
+    use console::console;
     use core::time::Duration;
 
     info!(
@@ -152,6 +154,12 @@ fn kernel_main() -> ! {
     );
     info!("Booting on: {}", bsp::board_name());
 
+    let (_, privilege_level) = exception::current_privilege_level();
+    info!("Current privilege level: {}", privilege_level);
+
+    info!("Exception handling state:");
+    exception::asynchronous::print_state();
+
     info!(
         "Architectural timer resolution: {} ns",
         time::time_manager().resolution().as_nanos()
@@ -160,11 +168,16 @@ fn kernel_main() -> ! {
     info!("Drivers loaded:");
     driver::driver_manager().enumerate();
 
-    // Test a failing timer case.
-    time::time_manager().spin_for(Duration::from_nanos(1));
+    info!("Timer test, spinning for 1 second");
+    time::time_manager().spin_for(Duration::from_secs(1));
+
+    info!("Echoing input now");
+
+    // Discard any spurious received characters before going into echo mode.
+    console().clear_rx();
 
     loop {
-        info!("Spinning for 1 second");
-        time::time_manager().spin_for(Duration::from_secs(1));
+        let c = console().read_char();
+        console().write_char(c);
     }
 }
