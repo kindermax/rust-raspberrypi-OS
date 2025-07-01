@@ -2,4 +2,9 @@ target extended-remote :3333
 load
 set $pc = 0x80000
 
-b main.rs:155
+b main.rs:144
+b main.rs:145
+b main.rs:150
+b main.rs:158
+b src/_arch/aarch64/memory/mmu.rs:124
+b src/_arch/aarch64/memory/mmu.rs:129
