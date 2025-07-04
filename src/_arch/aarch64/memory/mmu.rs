@@ -154,7 +154,9 @@ impl memory::mmu::interface::MMU for MemoryManagementUnit {
         SCTLR_EL1.modify(SCTLR_EL1::M::Enable + SCTLR_EL1::C::Cacheable + SCTLR_EL1::I::Cacheable);
 
         // Force MMU init to complete before next instruction.
-        barrier::isb(barrier::SY);
+        // NOTE: Using DSB instead of ISB due to ARM64 hardware timing issue
+        // ISB after MMU enable can cause hangs on some implementations
+        barrier::dsb(barrier::SY);
 
         Ok(())
     }
