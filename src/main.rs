@@ -109,11 +109,9 @@
 #![allow(clippy::upper_case_acronyms)]
 #![feature(format_args_nl)]
 #![feature(trait_alias)]
-
 #![allow(incomplete_features)]
 #![feature(int_roundings)]
 #![feature(core_intrinsics)]
-
 #![no_main]
 #![no_std]
 
@@ -140,7 +138,6 @@ mod time;
 ///       NullLocks instead of spinlocks), will fail to work (properly) on the RPi SoCs.
 unsafe fn kernel_init() -> ! {
     use memory::mmu::interface::MMU;
-
     if let Err(string) = memory::mmu::mmu().enable_mmu_and_caching() {
         panic!("MMU: {}", string);
     }
@@ -161,13 +158,14 @@ unsafe fn kernel_init() -> ! {
 /// The main function running after the early init.
 fn kernel_main() -> ! {
     use console::{console, interface::Write};
-    use core::time::Duration;
+    use core::{fmt::Write as FmtWrite, time::Duration};
 
     info!(
         "{} version {}",
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION")
     );
+
     info!("Booting on: {}", bsp::board_name());
 
     info!("MMU online. Special regions:");
@@ -190,15 +188,16 @@ fn kernel_main() -> ! {
     info!("Timer test, spinning for 1 second");
     time::time_manager().spin_for(Duration::from_secs(1));
 
-    // TODO(m.kind) adapt
-    let remapped_uart = unsafe { bsp::device_driver::PL011Uart::new(0x1FFF_1000) };
-    writeln!(
-        remapped_uart,
-        "[     !!!    ] Writing through the remapped UART at 0x1FFF_1000"
-    )
-    .unwrap();
+    // TODO: Add remapped UART test once interleaving is fixed
+    // let remapped_uart = unsafe { bsp::device_driver::PL011Uart::new(0x1FFF_1000) };
+    // remapped_uart
+    //     .write_fmt(format_args!(
+    //         "[     !!!    ] Writing through the remapped UART at 0x1FFF_1000\n"
+    //     ))
+    //     .unwrap();
 
     info!("Echoing input now");
+    console().flush();
 
     // Discard any spurious received characters before going into echo mode.
     console().clear_rx();
