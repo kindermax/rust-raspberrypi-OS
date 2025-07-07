@@ -343,21 +343,8 @@ impl PL011UartInner {
 /// [`src/print.rs`]: ../../print/index.html
 impl fmt::Write for PL011UartInner {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        const CHUNK_SIZE: usize = 16; // Flush every 16 characters to avoid FIFO overflow
-        let mut char_count = 0;
-
         for c in s.chars() {
             PL011UartInner::write_char(self, c);
-            char_count += 1;
-
-            // Periodically flush to give UART hardware time to transmit
-            if char_count % CHUNK_SIZE == 0 {
-                self.flush();
-                // Small delay to allow transmission
-                for _ in 0..1000 {
-                    crate::cpu::nop();
-                }
-            }
         }
 
         // Always flush at the end
