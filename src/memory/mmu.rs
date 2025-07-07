@@ -200,7 +200,7 @@ impl fmt::Display for TranslationDescriptor {
 
         write!(
             f,
-            "      {:#010x} - {:#010x} | {: >3} {} | {: <3} {} {: <3} | {}",
+            "      {:#012x} - {:#012x} | {: >3} {} | {: <3} {} {: <3} | {}",
             start, end, size, unit, attr, acc_p, xn, self.name
         )
     }
