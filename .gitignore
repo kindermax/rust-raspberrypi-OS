@@ -11,3 +11,4 @@ package*.json
 vendor
 rpi_files
 TODO.md
+uart.rs
