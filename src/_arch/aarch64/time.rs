@@ -119,10 +119,14 @@ impl TryFrom<Duration> for GenericTimerCounterValue {
 
 #[inline(always)]
 fn read_cntpct() -> GenericTimerCounterValue {
-    // Prevent that the counter is read ahead of time due to out-of-order execution.
-    barrier::isb(barrier::SY);
-    let cnt = CNTPCT_EL0.get();
+    // NOTE: ISB barrier commented out due to hang issue on Raspberry Pi 5
+    // The barrier was causing the system to hang during timer counter reads.
+    // This may be related to MMU configuration, exception level, or cache coherency.
+    //
+    // Original code:
+    // barrier::isb(barrier::SY);
 
+    let cnt = CNTPCT_EL0.get();
     GenericTimerCounterValue(cnt)
 }
 

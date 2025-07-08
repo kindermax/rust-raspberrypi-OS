@@ -347,6 +347,9 @@ impl fmt::Write for PL011UartInner {
             PL011UartInner::write_char(self, c);
         }
 
+        // Always flush at the end
+        self.flush();
+
         Ok(())
     }
 }
