@@ -39,6 +39,7 @@ RUN set -ex;                                      \
     libusb-1.0.0-dev                          \
     locales                                   \
     python3                                   \
+    python3-venv                              \
     ruby                                      \
     ruby-dev
 
@@ -64,7 +65,7 @@ RUN \
     # QEMU
     git clone https://gitlab.com/qemu-project/qemu.git;        \
     cd qemu;                                                   \
-    git checkout tags/v10.2.0;                                  \
+    git checkout tags/v10.0.2;                                  \
     ./configure --target-list=aarch64-softmmu --enable-modules \
     --enable-tcg-interpreter --enable-debug-tcg            \
     --python=/usr/bin/python3;                             \
