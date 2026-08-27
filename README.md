@@ -277,6 +277,9 @@ make openocd
 make gdb-opt0
 ```
 
+See the [probe reset proposal](docs/proposals/make-probe-reset.md) for a safe design that requests a
+firmware reset through SWD when the Debug Probe has no hardware reset signal.
+
 ## 🙌 Acknowledgements
 
 The original version of the tutorials started out as a fork of [Zoltan
