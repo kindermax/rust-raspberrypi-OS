@@ -195,7 +195,8 @@ Using two serial ports allows to see both `bootloader` logs and our `kernel` log
 
 ### Chainboot
 
-Chainboot is on separate branch (temp). Use this commands to get the chainloader kernel
+Chainboot is on separate branch (temp). Use this commands to get the chainloader kernel, put it on
+sdcard so you can load new kernel easier
 
 ```
 git switch chainloader
