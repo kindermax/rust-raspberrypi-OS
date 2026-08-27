@@ -195,10 +195,16 @@ Using two serial ports allows to see both `bootloader` logs and our `kernel` log
 
 ### Chainboot
 
-Chainboot is on separate branch (temp). Use this commands to get the chainloader kernel, put it on
-sdcard so you can load new kernel easier
+Put chainloder on sdcard:
 
+```bash
+cp files/kernel8_chainloader_debug_uart.img /Volumes/BOOT/kernel8.img
+# or cp files/kernel8_chainloader_rp1_uart.img /Volumes/BOOT/kernel8.img
 ```
+
+If you want to build new chainloader, you can switch on separate branch (temp).
+
+```bash
 git switch chainloader
 cp kernel8_chainloader_debug_uart.img /Volumes/BOOT/kernel8.img
 # or cp kernel8_chainloader_rp1_uart.img /Volumes/BOOT/kernel8.img
