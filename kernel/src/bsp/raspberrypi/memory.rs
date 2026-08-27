@@ -96,25 +96,39 @@ pub(super) mod map {
     /// Phsyical devices.
     #[cfg(feature = "bsp_rpi5")]
     pub mod mmio {
-        // use super::*;
+        /// Last two 64 KiB pages in the 4 GiB kernel address space, reserved for MMIO remapping.
+        pub const UART_VIRT_PAGE_START: usize = 0xFFFE_0000;
+        pub const GPIO_VIRT_PAGE_START: usize = 0xFFFF_0000;
 
-        // pub const START:            usize =         0xFC00_0000;
-        // pub const GPIO_START:       usize = START + GPIO_OFFSET;
-        // pub const PL011_UART_START: usize = START + UART_OFFSET;
+        /// Virtual addresses handed to the device drivers after the MMU is enabled.
+        pub const PL011_UART_START: usize = UART_VIRT_PAGE_START;
+        pub const PL011_EARLY_UART_START: usize = UART_VIRT_PAGE_START + 0x1000;
+        pub const GPIO_START: usize = GPIO_VIRT_PAGE_START;
 
-        // peripheral base address
-        #[allow(dead_code)]
-        pub const START:            usize =            0x10_7c000000;
-        pub const GPIO_START:       usize =            0x1f_000d0000; // TODO: looks like 1f if for pcie
-        // pub const PL011_UART_START: usize =         START + 0x30000; // w/o pcie
-        pub const PL011_UART_START: usize =         0x1c_00030000; // w/o pcie
-        // pub const PL011_UART_START: usize =         0x1f00030000; // w/ pcie
-        pub const PL011_EARLY_UART_START: usize = START + 0x1000;
-        // pub const PL011_EARLY_UART_START: usize = 0x107d001000;
+        /// Physical addresses inherited from the firmware's RP1 setup.
+        pub const PL011_UART_PHYS_START: usize = 0x1C_0003_0000;
+        pub const GPIO_PHYS_START: usize = 0x1F_000D_0000;
 
-        pub const END_INCLUSIVE:    usize =        START + 0x3FFFFFF;  // 65 535 KB (64MB)
+        /// Physical address of BCM2712's dedicated debug UART (UART10).
+        pub const PL011_EARLY_UART_PHYS_START: usize = 0x10_7D00_1000;
+
+        #[cfg(not(feature = "early-uart"))]
+        pub const ACTIVE_UART_PHYS_PAGE_START: usize = PL011_UART_PHYS_START;
+
+        #[cfg(feature = "early-uart")]
+        pub const ACTIVE_UART_PHYS_PAGE_START: usize =
+            PL011_EARLY_UART_PHYS_START & !0xFFFF;
     }
 }
+
+// RPi 5 peripherals live above 4 GiB physically, but every address handed to a driver is a virtual
+// address and must fit into the translation regime configured by `KernelAddrSpace`.
+#[cfg(feature = "bsp_rpi5")]
+const _: () = {
+    assert!(map::mmio::PL011_UART_START <= map::END_INCLUSIVE);
+    assert!(map::mmio::PL011_EARLY_UART_START <= map::END_INCLUSIVE);
+    assert!(map::mmio::GPIO_START <= map::END_INCLUSIVE);
+};
 
 //--------------------------------------------------------------------------------------------------
 // Private Code
@@ -138,4 +152,3 @@ fn code_start() -> usize {
 fn code_end_exclusive() -> usize {
     unsafe { __code_end_exclusive.get() as usize }
 }
-
