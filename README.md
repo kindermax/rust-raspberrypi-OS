@@ -69,6 +69,9 @@ The tutorials are primarily targeted at **Linux**-based distributions. Most stuf
 
       ```bash
       cargo install cargo-binutils rustfilt
+      cargo install --locked \
+        --git https://github.com/FlamingosProject/scip.git \
+        --rev a72f816fb4120a58ec7d6c59032d1e43860bc459
       ```
 
    1. If you need to install Rust from scratch:
@@ -78,22 +81,12 @@ The tutorials are primarily targeted at **Linux**-based distributions. Most stuf
 
       source $HOME/.cargo/env
       cargo install cargo-binutils rustfilt
+      cargo install --locked \
+        --git https://github.com/FlamingosProject/scip.git \
+        --rev a72f816fb4120a58ec7d6c59032d1e43860bc459
       ```
 
 1. In case you use `Visual Studio Code`, I strongly recommend installing the [Rust Analyzer extension].
-1. (**macOS only**) Install a few `Ruby` gems.
-
-  This was last tested by the author with Ruby version `3.0.2` on `macOS Monterey`. If you are using
-  `rbenv`, the respective `.ruby-version` file is already in place. If you never heard of `rbenv`,
-  try using [this little guide](https://stackoverflow.com/a/68118750).
-
-   Run this in the repository root folder:
-
-   ```bash
-   bundle config set --local path '.vendor/bundle'
-   bundle config set --local without 'development'
-   bundle install
-   ```
 
 [docker group]: https://docs.docker.com/engine/install/linux-postinstall/
 [Rust Analyzer extension]: https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer
@@ -109,7 +102,8 @@ cross-compilation. All that we need for cross-compiling from an `x86` host to th
 compiler, we will use some more tools. Among others:
 
 - `QEMU` to emulate our kernel on the host system.
-- A self-made tool called `Minipush` to load a kernel onto the Raspberry Pi on-demand over `UART`.
+- [`scip`], a Rust serial console that implements the MiniPush protocol for loading a kernel onto
+  the Raspberry Pi on-demand over `UART`.
 - `OpenOCD` and `GDB` for debugging on the target.
 
 There is a lot that can go wrong while installing and/or compiling the correct version of each tool
@@ -122,6 +116,7 @@ pulled in automagically once it is needed. If you want to know more about Docker
 provided container, please refer to the repository's [docker](docker) folder.
 
 [install_docker]: https://docs.docker.com/engine/install/#server
+[`scip`]: https://github.com/FlamingosProject/scip
 
 ## 📟 USB Serial Output
 
@@ -159,6 +154,7 @@ Using two serial ports allows to see both `bootloader` logs and our `kernel` log
 
 3. Now you can use one of the programs to talk to the rpi over serial port:
 
+    - `make miniterm` (uses `scip`)
     - <https://github.com/tio/tio>
           `tio /dev/tty.usbmodem12202`
     - screen
@@ -195,11 +191,38 @@ Using two serial ports allows to see both `bootloader` logs and our `kernel` log
 
 ### Chainboot
 
-Put chainloder on sdcard:
+The host-side terminal and uploader use the FlamingosProject fork of [`scip`] instead of the former
+Ruby `miniterm` and `minipush` scripts. The fork adds MiniPush uploads; the `serial-console` 1.0.1
+currently published on crates.io does not include that feature. If the fork is not installed yet,
+run:
+
+```bash
+cargo install --locked \
+  --git https://github.com/FlamingosProject/scip.git \
+  --rev a72f816fb4120a58ec7d6c59032d1e43860bc459
+```
+
+Put the chainloader on the SD card:
 
 ```bash
 cp files/kernel8_chainloader_debug_uart.img /Volumes/BOOT/kernel8.img
-# or cp files/kernel8_chainloader_rp1_uart.img /Volumes/BOOT/kernel8.img
+# or cp files/kernel8_chainloader_rpi1_uart.img /Volumes/BOOT/kernel8.img
+```
+
+Then build and upload the current kernel. `scip` stays attached as the serial console after the
+upload completes:
+
+```bash
+make chainboot
+```
+
+The checked-in chainloader and kernels currently use 115200 baud. Override the serial device,
+payload, or baud rate when needed:
+
+```bash
+DEV_SERIAL=/dev/ttyUSB0 make chainboot
+CHAINBOOT_PAYLOAD=path/to/kernel8.img make chainboot
+SERIAL_BAUD=115200 make miniterm
 ```
 
 If you want to build new chainloader, you can switch on separate branch (temp).

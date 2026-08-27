@@ -5,6 +5,7 @@
 include ./common/docker.mk
 include ./common/format.mk
 include ./common/operating_system.mk
+include ./common/serial.mk
 
 ##--------------------------------------------------------------------------------------------------
 ## Optional, user-provided configuration values
@@ -119,8 +120,6 @@ OBJCOPY_CMD = rust-objcopy \
 
 EXEC_QEMU          = $(QEMU_BINARY) -M $(QEMU_MACHINE_TYPE)
 EXEC_TEST_DISPATCH = ruby ./common/tests/dispatch.rb
-EXEC_MINITERM      = ruby ./common/serial/miniterm.rb
-EXEC_MINIPUSH      = ruby ./common/serial/minipush.rb
 
 ##------------------------------------------------------------------------------
 ## Dockerization
@@ -128,7 +127,6 @@ EXEC_MINIPUSH      = ruby ./common/serial/minipush.rb
 DOCKER_CMD            = docker run -t --rm -v $(shell pwd):/work/tutorial -w /work/tutorial
 DOCKER_CMD_INTERACT   = $(DOCKER_CMD) -i
 DOCKER_ARG_DIR_COMMON = -v $(shell pwd)/common:/work/common
-DOCKER_ARG_DIR_JTAG   = -v $(shell pwd)/X1_JTAG_boot:/work/X1_JTAG_boot
 DOCKER_ARG_DEV        = --privileged -v /dev:/dev
 DOCKER_ARG_NET        = --network host
 
@@ -142,10 +140,6 @@ DOCKER_GDB   = $(DOCKER_CMD_INTERACT) $(DOCKER_ARG_NET) $(DOCKER_IMAGE)
 ifeq ($(shell uname -s),Linux)
     DOCKER_CMD_DEV = $(DOCKER_CMD_INTERACT) $(DOCKER_ARG_DEV)
 
-    DOCKER_MINITERM = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_IMAGE)
-
-    DOCKER_CHAINBOOT = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_IMAGE)
-    DOCKER_JTAGBOOT  = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_ARG_DIR_JTAG) $(DOCKER_IMAGE)
     DOCKER_OPENOCD   = $(DOCKER_CMD_DEV) $(DOCKER_ARG_NET) $(DOCKER_IMAGE)
 else ifeq ($(shell uname -s),Darwin)
     DOCKER_OPENOCD   =
@@ -159,7 +153,7 @@ endif
 ##--------------------------------------------------------------------------------------------------
 ## Targets
 ##--------------------------------------------------------------------------------------------------
-.PHONY: all doc qemu miniterm clippy clean readelf objdump nm check
+.PHONY: all chainboot doc qemu miniterm clippy clean readelf objdump nm check
 
 all: $(KERNEL_BIN)
 
@@ -233,11 +227,11 @@ endif
 ## Connect to the target's serial
 ##------------------------------------------------------------------------------
 miniterm:
-	@$(DOCKER_MINITERM) $(EXEC_MINITERM) $(DEV_SERIAL)
+	$(SCIP) $(SCIP_SERIAL_ARGS)
 
 ## Push the kernel to the real HW target
 chainboot: $(KERNEL_BIN)
-	@$(DOCKER_CHAINBOOT) $(EXEC_MINIPUSH) $(DEV_SERIAL) $(KERNEL_BIN)
+	$(call scip_upload,$(CHAINBOOT_PAYLOAD),payload)
 
 ##------------------------------------------------------------------------------
 ## Run clippy
@@ -286,7 +280,7 @@ nm: $(KERNEL_ELF)
 ## Push the JTAG boot image to the real HW target
 ##------------------------------------------------------------------------------
 jtagboot:
-	@$(DOCKER_JTAGBOOT) $(EXEC_MINIPUSH) $(DEV_SERIAL) $(JTAG_BOOT_IMAGE)
+	$(call scip_upload,$(JTAG_BOOT_IMAGE),JTAG boot image)
 
 ##------------------------------------------------------------------------------
 ## Start OpenOCD session
@@ -379,4 +373,3 @@ test_integration:
 test: test_boot test_unit test_integration
 
 endif
-
