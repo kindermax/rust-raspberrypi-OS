@@ -12,3 +12,4 @@ vendor
 rpi_files
 TODO.md
 uart.rs
+.DS_Store
