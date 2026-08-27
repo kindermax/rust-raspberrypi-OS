@@ -33,7 +33,7 @@ P.S.: For other languages, please look out for alternative README files. For exa
 - Each tutorial `README` will have a short `tl;dr` section giving a brief overview of the additions,
   and show the source code `diff` to the previous tutorial, so that you can conveniently inspect the
   changes/additions.
-    - Some tutorials have a full-fledged, detailed text in addition to the `tl;dr` section. The
+  - Some tutorials have a full-fledged, detailed text in addition to the `tl;dr` section. The
       long-term plan is that all tutorials get a full text, but for now this is exclusive to
       tutorials where I think that `tl;dr` and `diff` are not enough to get the idea.
 - The code written in these tutorials supports and runs on the **Raspberry Pi 3** and the
@@ -66,11 +66,13 @@ The tutorials are primarily targeted at **Linux**-based distributions. Most stuf
 1. Prepare the `Rust` toolchain. Most of it will be handled on first use through the
    [rust-toolchain.toml](rust-toolchain.toml) file. What's left for us to do is:
    1. If you already have a version of Rust installed:
+
       ```bash
       cargo install cargo-binutils rustfilt
       ```
 
    1. If you need to install Rust from scratch:
+
       ```bash
       curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
@@ -141,7 +143,59 @@ get a USB serial cable to get the full experience.
 [\[1\]]: https://www.amazon.de/dp/B0757FQ5CX/ref=cm_sw_r_tw_dp_U_x_ozGRDbVTJAG4Q
 [\[2\]]: https://www.adafruit.com/product/954
 
-## Chainboot
+## Development
+
+### SDCard
+
+In order to prepare sdcard you need to erase sdcard (fat32) and then run `make prepare-sdcard`. It
+will copy proper files to it and then it will be ready to be used by us with chainloader.
+
+## Use raspberry debug probe serial + gpio uart serial
+
+Using two serial ports allows to see both `bootloader` logs and our `kernel` logs.
+
+1. Connect RPI serial debugger to early uart and to U port on debugger.
+2. Connect other usb to ttl to original gpio pins from the readme (GND, RX, TX)
+
+3. Now you can use one of the programs to talk to the rpi over serial port:
+
+    - <https://github.com/tio/tio>
+          `tio /dev/tty.usbmodem12202`
+    - screen
+          `screen /dev/ttyUSB0 115200`
+    - python with pyserial
+          `python3 -m serial.tools.miniterm /dev/ttyUSB0 115200`
+
+4. List all devices by `ls -l /dev`
+
+  You will see something like this:
+
+    ```bash
+    ...
+    crw-rw-rw-  1 root   wheel        0x9000008 Aug 27 19:05 tty.SLAB_USBtoUART
+    crw-rw-rw-  1 root   wheel        0x9000004 Aug 27 19:06 tty.usbmodem12202
+    crw-rw-rw-  1 root   wheel        0x9000006 Aug 27 19:05 tty.usbserial-0001
+    ...
+    ```
+
+    In my case:
+    - `tty.usbmodem12202` is RPI debug probe - this is where rpi bootloader logs are shown
+    - `tty.SLAB_USBtoUART` is gpio uart - this is where our `kernel` logs are shown
+
+5. Connect using `tio` and power up RPI
+
+  ```bash
+  # in one terminal
+  tio /dev/tty.usbmodem12202
+  # in another terminal
+  tio /dev/tty.SLAB_USBtoUART
+  ```
+
+  You will see bootloader logs and kernel logs side by side
+
+### Chainboot
+
+Chainboot is on separate branch (temp). Use this commands to get the chainloader kernel
 
 ```
 git switch chainloader
@@ -149,7 +203,7 @@ cp kernel8_chainloader_debug_uart.img /Volumes/BOOT/kernel8.img
 # or cp kernel8_chainloader_rp1_uart.img /Volumes/BOOT/kernel8.img
 ```
 
-## Openocd
+### Openocd
 
 ```bash
 make jtagboot
@@ -165,12 +219,12 @@ RPi3](https://github.com/bztsrc/raspi3-tutorial) in `C`. Thanks for giving me a 
 
 ### Translations of this repository
 
- - **Chinese**
-   - [@colachg] and [@readlnh].
-   - Need updating.
- - **Spanish**
-   -  [@zanezhub].
-   -  In the future there'll be tutorials translated to spanish.
+- **Chinese**
+  - [@colachg] and [@readlnh].
+  - Need updating.
+- **Spanish**
+  - [@zanezhub].
+  - In the future there'll be tutorials translated to spanish.
 
 [@colachg]: https://github.com/colachg
 [@readlnh]: https://github.com/readlnh

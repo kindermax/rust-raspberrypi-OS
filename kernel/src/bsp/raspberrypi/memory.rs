@@ -4,7 +4,6 @@
 
 //! BSP Memory Management.
 
-//!
 //! The physical memory layout.
 //!
 //! The Raspberry's firmware copies the kernel binary to 0x8_0000. The preceding region will be used
@@ -105,10 +104,10 @@ pub(super) mod map {
 
         // peripheral base address
         #[allow(dead_code)]
-        pub const START:            usize =            0x107c000000;
-        pub const GPIO_START:       usize =            0x1f000d0000; // TODO: looks like 1f if for pcie
+        pub const START:            usize =            0x10_7c000000;
+        pub const GPIO_START:       usize =            0x1f_000d0000; // TODO: looks like 1f if for pcie
         // pub const PL011_UART_START: usize =         START + 0x30000; // w/o pcie
-        pub const PL011_UART_START: usize =         0x1c00030000; // w/o pcie
+        pub const PL011_UART_START: usize =         0x1c_00030000; // w/o pcie
         // pub const PL011_UART_START: usize =         0x1f00030000; // w/ pcie
         pub const PL011_EARLY_UART_START: usize = START + 0x1000;
         // pub const PL011_EARLY_UART_START: usize = 0x107d001000;
@@ -116,7 +115,6 @@ pub(super) mod map {
         pub const END_INCLUSIVE:    usize =        START + 0x3FFFFFF;  // 65 535 KB (64MB)
     }
 }
-
 
 //--------------------------------------------------------------------------------------------------
 // Private Code
@@ -140,3 +138,4 @@ fn code_start() -> usize {
 fn code_end_exclusive() -> usize {
     unsafe { __code_end_exclusive.get() as usize }
 }
+

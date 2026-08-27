@@ -148,8 +148,8 @@ ifeq ($(shell uname -s),Linux)
     DOCKER_JTAGBOOT  = $(DOCKER_CMD_DEV) $(DOCKER_ARG_DIR_COMMON) $(DOCKER_ARG_DIR_JTAG) $(DOCKER_IMAGE)
     DOCKER_OPENOCD   = $(DOCKER_CMD_DEV) $(DOCKER_ARG_NET) $(DOCKER_IMAGE)
 else ifeq ($(shell uname -s),Darwin)
-    DOCKER_OPENOCD   = 
-    DOCKER_GDB = 
+    DOCKER_OPENOCD   =
+    DOCKER_GDB =
 else
     DOCKER_OPENOCD   = echo "Not yet supported on non-Linux systems."; \#
 endif
@@ -193,9 +193,18 @@ sdcard: $(KERNEL_BIN)
 	$(call color_header, "Load to sdcard")
 	cp $(KERNEL_BIN) $(SDCARD_DIR)
 	ls -lh $(SDCARD_DIR)
-	cp config.txt $(SDCARD_DIR) 
+	cp files/config.txt $(SDCARD_DIR)
 	cat $(SDCARD_DIR)/config.txt
 	diskutil unmount $(SDCARD_DIR)
+
+prepare-sdcard:
+	$(call color_header, "Prepare sdcard")
+	ls -lh $(SDCARD_DIR)
+	cp files/config.txt $(SDCARD_DIR)
+	cp files/bcm2712-rpi-5-b.dtb $(SDCARD_DIR)
+	cp files/fixup4.dat $(SDCARD_DIR)
+	cp files/start4.elf $(SDCARD_DIR)
+
 
 ##------------------------------------------------------------------------------
 ## Generate the documentation
