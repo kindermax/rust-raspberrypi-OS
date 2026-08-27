@@ -247,6 +247,28 @@ CHAINBOOT_PAYLOAD=path/to/kernel8.img make chainboot
 SERIAL_BAUD=115200 make miniterm
 ```
 
+#### With or without chainloader
+
+With the chainloader installed as the SD card’s kernel8.img, every boot works like this:
+
+`Firmware → chainloader → wait for UART upload → run kernel from RAM`
+
+The uploaded kernel is stored only in RAM, so it disappears after power-off/reset. You must run:
+
+`DEV_SERIAL=/dev/tty.usbserial-0001 make chainboot`
+
+If you want the Pi to boot the kernel immediately without a host computer, replace the SD-card chainloader with the normal kernel:
+
+`CHAINLOADER= make copy-kernel-to-sdcard`
+
+Then the flow becomes:
+
+`Firmware → normal kernel directly`
+
+To restore chainloading later:
+
+`CHAINLOADER=1 RPI5_EARLY_UART= make copy-kernel-to-sdcard`
+
 ### Openocd
 
 ```bash

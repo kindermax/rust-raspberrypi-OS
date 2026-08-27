@@ -16,10 +16,14 @@ BSP ?= rpi5
 SDCARD_DIR ?= /Volumes/BOOT
 
 # Default to a serial device name that is common in Linux.
-# DEV_SERIAL ?= /dev/ttyUSB0
+# Is RP1/GPIO UART (14/15 gpio)
+# Best use: Chainloader and normal kernel development
 DEV_SERIAL ?= /dev/tty.usbserial-0001
-# DEV_SERIAL ?= /dev/tty.SLAB_USBtoUART
+# Is the dedicated debug probe 3-pin connector labelled UART UART
+# Best use: Earliest firmware/boot debugging
 # DEV_SERIAL ?= /dev/cu.usbmodem112202
+# Alias for debug probe UART
+# DEV_SERIAL ?= /dev/tty.SLAB_USBtoUART
 
 RPI5_EARLY_UART ?=
 
