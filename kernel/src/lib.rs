@@ -127,10 +127,15 @@
 #![reexport_test_harness_main = "test_main"]
 #![test_runner(crate::test_runner)]
 
+#[cfg(all(feature = "chainloader", feature = "test_build"))]
+compile_error!("features `chainloader` and `test_build` cannot be enabled together");
+
 mod panic_wait;
 mod synchronization;
 
 pub mod bsp;
+#[cfg(feature = "chainloader")]
+pub mod chainloader;
 pub mod common;
 pub mod console;
 pub mod cpu;
@@ -153,7 +158,7 @@ pub fn version() -> &'static str {
     )
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(feature = "chainloader")))]
 extern "Rust" {
     fn kernel_init() -> !;
 }

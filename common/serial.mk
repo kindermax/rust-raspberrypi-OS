@@ -5,7 +5,7 @@
 SERIAL_BAUD ?= 115200
 SCIP ?= scip
 SCIP_SERIAL_ARGS ?= "$(DEV_SERIAL)" $(SERIAL_BAUD) 8 N 1 N
-CHAINBOOT_PAYLOAD ?= $(KERNEL_BIN)
+CHAINBOOT_PAYLOAD ?= kernel8.img
 
 define scip_upload
 	@test -f "$(1)" || { \

@@ -18,6 +18,7 @@ SDCARD_DIR ?= /Volumes/BOOT
 # Default to a serial device name that is common in Linux.
 # DEV_SERIAL ?= /dev/ttyUSB0
 DEV_SERIAL ?= /dev/tty.usbserial-0001
+# DEV_SERIAL ?= /dev/tty.SLAB_USBtoUART
 # DEV_SERIAL ?= /dev/cu.usbmodem112202
 
 RPI5_EARLY_UART ?=
@@ -36,7 +37,7 @@ QEMU_MISSING_STRING = "This board is not yet supported for QEMU."
 
 ifeq ($(BSP),rpi3)
     TARGET            = aarch64-unknown-none-softfloat
-    KERNEL_BIN        = kernel8.img
+    NORMAL_KERNEL_BIN = kernel8.img
     QEMU_BINARY       = qemu-system-aarch64
     QEMU_MACHINE_TYPE = raspi3
     QEMU_RELEASE_ARGS = -serial stdio -display none
@@ -44,11 +45,10 @@ ifeq ($(BSP),rpi3)
     OBJDUMP_BINARY    = aarch64-none-elf-objdump
     NM_BINARY         = aarch64-none-elf-nm
     READELF_BINARY    = aarch64-none-elf-readelf
-    LD_SCRIPT_PATH    = $(shell pwd)/kernel/src/bsp/raspberrypi
     RUSTC_MISC_ARGS   = -C target-cpu=cortex-a53
 else ifeq ($(BSP),rpi4)
     TARGET            = aarch64-unknown-none-softfloat
-    KERNEL_BIN        = kernel8.img
+    NORMAL_KERNEL_BIN = kernel8.img
     QEMU_BINARY       = qemu-system-aarch64
     QEMU_MACHINE_TYPE = raspi4b
     QEMU_RELEASE_ARGS = -serial stdio -display none
@@ -56,11 +56,10 @@ else ifeq ($(BSP),rpi4)
     OBJDUMP_BINARY    = aarch64-none-elf-objdump
     NM_BINARY         = aarch64-none-elf-nm
     READELF_BINARY    = aarch64-none-elf-readelf
-    LD_SCRIPT_PATH    = $(shell pwd)/kernel/src/bsp/raspberrypi
     RUSTC_MISC_ARGS   = -C target-cpu=cortex-a72
 else ifeq ($(BSP),rpi5)
     TARGET            = aarch64-unknown-none-softfloat
-    KERNEL_BIN        = kernel8.img
+    NORMAL_KERNEL_BIN = kernel8.img
     QEMU_BINARY       = qemu-system-aarch64
     QEMU_MACHINE_TYPE = virt
     QEMU_RELEASE_ARGS = -serial stdio -display none
@@ -70,21 +69,18 @@ else ifeq ($(BSP),rpi5)
     READELF_BINARY    = aarch64-none-elf-readelf
     OPENOCD_ARG       = -f ./cmsis-dap.cfg -f ./rpi5-openocd.cfg -c "adapter speed 5000"
     JTAG_BOOT_IMAGE   = ./X1_JTAG_boot/jtag_boot_rpi5.img
-    LD_SCRIPT_PATH    = $(shell pwd)/kernel/src/bsp/raspberrypi
     RUSTC_MISC_ARGS   = -C target-cpu=cortex-a76
 endif
-
-# Export for build.rs.
-export LD_SCRIPT_PATH
-
-
 
 ##--------------------------------------------------------------------------------------------------
 ## Targets and Prerequisites
 ##--------------------------------------------------------------------------------------------------
-KERNEL_MANIFEST      = kernel/Cargo.toml
-KERNEL_LINKER_SCRIPT = kernel.ld
-LAST_BUILD_CONFIG    = target/$(BSP).build_config
+KERNEL_MANIFEST   = kernel/Cargo.toml
+CHAINLOADER_BIN   = chainloader8.img
+KERNEL_BIN        = $(if $(CHAINLOADER),$(CHAINLOADER_BIN),$(NORMAL_KERNEL_BIN))
+BUILD_MODE        = $(if $(CHAINLOADER),chainloader,kernel)
+UART_MODE         = $(if $(RPI5_EARLY_UART),early-uart,standard-uart)
+LAST_BUILD_CONFIG = target/$(BSP).$(BUILD_MODE).$(UART_MODE).build_config
 
 KERNEL_ELF      = target/$(TARGET)/debug/kernel
 # This parses cargo's dep-info file.
@@ -96,17 +92,19 @@ KERNEL_ELF_DEPS = $(filter-out %: ,$(file < $(KERNEL_ELF).d)) $(KERNEL_MANIFEST)
 ##--------------------------------------------------------------------------------------------------
 ## Command building blocks
 ##--------------------------------------------------------------------------------------------------
-RUSTFLAGS = $(RUSTC_MISC_ARGS)                   \
-    -C link-arg=--library-path=$(LD_SCRIPT_PATH) \
-    -C link-arg=--script=$(KERNEL_LINKER_SCRIPT)
+RUSTFLAGS = $(RUSTC_MISC_ARGS)
 
 RUSTFLAGS_PEDANTIC = $(RUSTFLAGS) \
     -D missing_docs
 
-FEATURES      = --features bsp_$(BSP)
+KERNEL_FEATURES = bsp_$(BSP)
 ifeq ($(RPI5_EARLY_UART),1)
-    FEATURES      = --features bsp_$(BSP),early-uart
+    KERNEL_FEATURES := $(KERNEL_FEATURES),early-uart
 endif
+ifdef CHAINLOADER
+    KERNEL_FEATURES := $(KERNEL_FEATURES),chainloader
+endif
+FEATURES = --features $(KERNEL_FEATURES)
 COMPILER_ARGS = --target=$(TARGET) \
     $(FEATURES)
 
@@ -153,7 +151,8 @@ endif
 ##--------------------------------------------------------------------------------------------------
 ## Targets
 ##--------------------------------------------------------------------------------------------------
-.PHONY: all chainboot doc qemu miniterm clippy clean readelf objdump nm check
+.PHONY: all chainboot copy-kernel-to-sdcard prepare-sdcard doc qemu miniterm clippy clean
+.PHONY: readelf objdump nm check
 
 all: $(KERNEL_BIN)
 
@@ -183,21 +182,23 @@ $(KERNEL_BIN): $(KERNEL_ELF)
 	$(call color_progress_prefix, "Size")
 	$(call disk_usage_KiB, $(KERNEL_BIN))
 
-sdcard: $(KERNEL_BIN)
+copy-kernel-to-sdcard: $(KERNEL_BIN)
 	$(call color_header, "Load to sdcard")
-	cp $(KERNEL_BIN) $(SDCARD_DIR)
+	cp $(KERNEL_BIN) $(SDCARD_DIR)/kernel8.img
 	ls -lh $(SDCARD_DIR)
-	cp files/config.txt $(SDCARD_DIR)
-	cat $(SDCARD_DIR)/config.txt
 	diskutil unmount $(SDCARD_DIR)
 
 prepare-sdcard:
+	$(MAKE) BSP=$(BSP) CHAINLOADER=1 RPI5_EARLY_UART=1 all
 	$(call color_header, "Prepare sdcard")
 	ls -lh $(SDCARD_DIR)
 	cp files/config.txt $(SDCARD_DIR)
 	cp files/bcm2712-rpi-5-b.dtb $(SDCARD_DIR)
 	cp files/fixup4.dat $(SDCARD_DIR)
 	cp files/start4.elf $(SDCARD_DIR)
+	cp $(CHAINLOADER_BIN) $(SDCARD_DIR)/kernel8.img
+	ls -lh $(SDCARD_DIR)
+	diskutil unmount $(SDCARD_DIR)
 
 
 ##------------------------------------------------------------------------------
@@ -230,7 +231,7 @@ miniterm:
 	$(SCIP) $(SCIP_SERIAL_ARGS)
 
 ## Push the kernel to the real HW target
-chainboot: $(KERNEL_BIN)
+chainboot: $(NORMAL_KERNEL_BIN)
 	$(call scip_upload,$(CHAINBOOT_PAYLOAD),payload)
 
 ##------------------------------------------------------------------------------
@@ -238,14 +239,16 @@ chainboot: $(KERNEL_BIN)
 ##------------------------------------------------------------------------------
 clippy:
 	@RUSTFLAGS="$(RUSTFLAGS_PEDANTIC)" $(CLIPPY_CMD)
+ifndef CHAINLOADER
 	@RUSTFLAGS="$(RUSTFLAGS_PEDANTIC)" $(CLIPPY_CMD) --features test_build --tests \
                 --manifest-path $(KERNEL_MANIFEST)
+endif
 
 ##------------------------------------------------------------------------------
 ## Clean
 ##------------------------------------------------------------------------------
 clean:
-	rm -rf target $(KERNEL_BIN)
+	rm -rf target $(NORMAL_KERNEL_BIN) $(CHAINLOADER_BIN)
 
 ##------------------------------------------------------------------------------
 ## Run readelf

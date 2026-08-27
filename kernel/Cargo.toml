@@ -10,6 +10,7 @@ bsp_rpi3 = ["tock-registers"]
 bsp_rpi4 = ["tock-registers"]
 bsp_rpi5 = ["tock-registers"]
 early-uart = []                            # rpi5 specific
+chainloader = []
 all = ["bsp_rpi3", "bsp_rpi4", "bsp_rpi5"]
 test_build = ["qemu-exit"]
 

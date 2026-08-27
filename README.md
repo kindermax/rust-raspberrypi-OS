@@ -142,8 +142,9 @@ get a USB serial cable to get the full experience.
 
 ### SDCard
 
-In order to prepare sdcard you need to erase sdcard (fat32) and then run `make prepare-sdcard`. It
-will copy proper files to it and then it will be ready to be used by us with chainloader.
+To prepare an SD card for Raspberry Pi 5, erase it as FAT32, mount it at `/Volumes/BOOT`, and run
+`make prepare-sdcard`. This builds the chainloader for the RPi 5 debug UART, copies it as
+`kernel8.img` together with the required firmware files, and unmounts the card.
 
 ## Use raspberry debug probe serial + gpio uart serial
 
@@ -177,6 +178,7 @@ Using two serial ports allows to see both `bootloader` logs and our `kernel` log
     In my case:
     - `tty.usbmodem12202` is RPI debug probe - this is where rpi bootloader logs are shown
     - `tty.SLAB_USBtoUART` is gpio uart - this is where our `kernel` logs are shown
+      Try `tty.usbmodem12202` if you do not see any bootloader logs.
 
 5. Connect using `tio` and power up RPI
 
@@ -197,40 +199,52 @@ currently published on crates.io does not include that feature. If the fork is n
 run:
 
 ```bash
-cargo install --locked \
-  --git https://github.com/FlamingosProject/scip.git \
-  --rev a72f816fb4120a58ec7d6c59032d1e43860bc459
+cargo install --git https://github.com/FlamingosProject/scip.git
 ```
 
-Put the chainloader on the SD card:
+The same source tree supports two build modes. A normal build produces the kernel that will be sent
+over UART:
 
 ```bash
-cp files/kernel8_chainloader_debug_uart.img /Volumes/BOOT/kernel8.img
-# or cp files/kernel8_chainloader_rpi1_uart.img /Volumes/BOOT/kernel8.img
+make                    # Raspberry Pi 5 (default)
+BSP=rpi4 make           # Raspberry Pi 4
 ```
 
-Then build and upload the current kernel. `scip` stays attached as the serial console after the
-upload completes:
+Setting `CHAINLOADER=1` builds the UART chainloader instead and writes it to `chainloader8.img`:
+
+```bash
+CHAINLOADER=1 make
+BSP=rpi4 CHAINLOADER=1 make
+```
+
+For Raspberry Pi 5, the default uses the RP1 UART on GPIO 14/15. To use the firmware-configured
+debug UART instead, add `RPI5_EARLY_UART=1`:
+
+```bash
+CHAINLOADER=1 RPI5_EARLY_UART=1 make
+```
+
+Copy the selected loader to the SD card once. Raspberry Pi firmware must see it as `kernel8.img`:
+
+```bash
+CHAINLOADER=1 make copy-kernel-to-sdcard
+# or build and install the RPi 5 debug-UART setup plus firmware files:
+make prepare-sdcard
+```
+
+Put the card into the Pi and power it on. For the normal development loop, build and upload the
+regular `kernel8.img`. `scip` remains attached as the serial console after the upload completes:
 
 ```bash
 make chainboot
 ```
 
-The checked-in chainloader and kernels currently use 115200 baud. Override the serial device,
-payload, or baud rate when needed:
+Both modes use 115200 baud. Override the serial device, payload, or baud rate when needed:
 
 ```bash
 DEV_SERIAL=/dev/ttyUSB0 make chainboot
 CHAINBOOT_PAYLOAD=path/to/kernel8.img make chainboot
 SERIAL_BAUD=115200 make miniterm
-```
-
-If you want to build new chainloader, you can switch on separate branch (temp).
-
-```bash
-git switch chainloader
-cp kernel8_chainloader_debug_uart.img /Volumes/BOOT/kernel8.img
-# or cp kernel8_chainloader_rp1_uart.img /Volumes/BOOT/kernel8.img
 ```
 
 ### Openocd

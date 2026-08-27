@@ -11,14 +11,23 @@
 //!
 //! crate::cpu::boot::arch_boot
 
+#[cfg(not(feature = "chainloader"))]
 use aarch64_cpu::{asm, registers::*};
 use core::arch::global_asm;
+#[cfg(not(feature = "chainloader"))]
 use tock_registers::interfaces::Writeable;
 
-// Assembly counterpart to this file.
+// Normal and chainloader builds have deliberately different early-boot contracts.
+#[cfg(not(feature = "chainloader"))]
 global_asm!(
     include_str!("boot.s"),
     CONST_CURRENTEL_EL2 = const 0x8,
+    CONST_CORE_ID_MASK = const 0b11
+);
+
+#[cfg(feature = "chainloader")]
+global_asm!(
+    include_str!("chainloader.s"),
     CONST_CORE_ID_MASK = const 0b11
 );
 
@@ -33,6 +42,7 @@ global_asm!(
 /// - The `bss` section is not initialized yet. The code must not use or reference it in any way.
 /// - The HW state of EL1 must be prepared in a sound way.
 #[inline(always)]
+#[cfg(not(feature = "chainloader"))]
 unsafe fn prepare_el2_to_el1_transition(phys_boot_core_stack_end_exclusive_addr: u64) {
     // Enable timer counter registers for EL1.
     CNTHCTL_EL2.write(CNTHCTL_EL2::EL1PCEN::SET + CNTHCTL_EL2::EL1PCTEN::SET);
@@ -75,9 +85,21 @@ unsafe fn prepare_el2_to_el1_transition(phys_boot_core_stack_end_exclusive_addr:
 ///
 /// - Exception return from EL2 must must continue execution in EL1 with `kernel_init()`.
 #[no_mangle]
+#[cfg(not(feature = "chainloader"))]
 pub unsafe extern "C" fn _start_rust(phys_boot_core_stack_end_exclusive_addr: u64) -> ! {
     prepare_el2_to_el1_transition(phys_boot_core_stack_end_exclusive_addr);
 
     // Use `eret` to "return" to EL1. This results in execution of kernel_init() in EL1.
     asm::eret()
+}
+
+/// Enter the relocated chainloader directly, without normal kernel initialization.
+///
+/// # Safety
+///
+/// - `device_tree` must point to the copy made by the chainloader boot assembly.
+#[no_mangle]
+#[cfg(feature = "chainloader")]
+pub unsafe extern "C" fn _start_rust(device_tree: *const u8) -> ! {
+    crate::chainloader::run(device_tree)
 }

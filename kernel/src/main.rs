@@ -13,6 +13,9 @@
 #![no_main]
 #![no_std]
 
+#[cfg(feature = "chainloader")]
+use libkernel as _;
+#[cfg(not(feature = "chainloader"))]
 use libkernel::{bsp, console, driver, exception, info, memory, time};
 
 /// Early init code.
@@ -25,6 +28,7 @@ use libkernel::{bsp, console, driver, exception, info, memory, time};
 ///       e.g. the yet-to-be-introduced spinlocks in the device drivers (which currently employ
 ///       NullLocks instead of spinlocks), will fail to work (properly) on the RPi SoCs.
 #[no_mangle]
+#[cfg(not(feature = "chainloader"))]
 unsafe fn kernel_init() -> ! {
     use memory::mmu::interface::MMU;
 
@@ -48,6 +52,7 @@ unsafe fn kernel_init() -> ! {
 }
 
 /// The main function running after the early init.
+#[cfg(not(feature = "chainloader"))]
 fn kernel_main() -> ! {
     use console::console;
 
