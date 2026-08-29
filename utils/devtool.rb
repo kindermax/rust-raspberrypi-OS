@@ -73,17 +73,8 @@ class TutorialCrate
         Dir.chdir(@folder) { exit(1) unless system("BSP=#{bsp} make test_boot") }
     end
 
-    def test_unit(bsp)
-        return unless unit_integration_tests?
-
-        puts "\n\n"
-        puts "Test Unit #{@folder} - BSP: #{bsp}".light_blue
-
-        Dir.chdir(@folder) { exit(1) unless system("BSP=#{bsp} make test_unit") }
-    end
-
     def test_integration(bsp)
-        return unless unit_integration_tests?
+        return unless integration_tests?
 
         puts "\n\n"
         puts "Test Integration #{@folder} - BSP: #{bsp}".light_blue
@@ -97,8 +88,8 @@ class TutorialCrate
         Dir.exist?("#{@folder}/tests") || Dir.exist?("#{@folder}/kernel/tests")
     end
 
-    def unit_integration_tests?
-        !Dir.glob("#{@folder}/kernel/tests/00_*.rs").empty?
+    def integration_tests?
+        !Dir.glob("#{@folder}/kernel/tests/*.rs").empty?
     end
 end
 
@@ -175,12 +166,6 @@ class DevTool
         @crates.each { |c| c.test_boot(bsp) }
     end
 
-    def test_unit(bsp = nil)
-        bsp ||= @bsp
-
-        @crates.each { |c| c.test_unit(bsp) }
-    end
-
     def test_integration(bsp = nil)
         bsp ||= @bsp
 
@@ -223,7 +208,6 @@ class DevTool
         clippy('rpi4')
         clippy('rpi3')
         test_boot('rpi3')
-        test_unit('rpi3')
         test_integration('rpi3')
         clean
     end

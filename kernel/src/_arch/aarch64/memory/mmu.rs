@@ -18,7 +18,6 @@ use crate::{
     memory::mmu::{translation_table::KernelTranslationTable, TranslationGranule},
 };
 use aarch64_cpu::{asm::barrier, registers::*};
-use core::intrinsics::unlikely;
 use tock_registers::interfaces::{ReadWriteable, Readable, Writeable};
 
 //--------------------------------------------------------------------------------------------------
@@ -27,6 +26,11 @@ use tock_registers::interfaces::{ReadWriteable, Readable, Writeable};
 
 /// Memory Management Unit type.
 struct MemoryManagementUnit;
+
+/// No-op placeholder until `core::hint::unlikely` is stable.
+const fn unlikely(value: bool) -> bool {
+    value
+}
 
 //--------------------------------------------------------------------------------------------------
 // Public Definitions
@@ -135,13 +139,17 @@ impl memory::mmu::interface::MMU for MemoryManagementUnit {
         // Prepare the memory attribute indirection register.
         self.set_up_mair();
 
+        // Get a mutable reference to the kernel tables. This function is called only once, during
+        // kernel initialization, before any other references to the tables can exist.
+        let kernel_tables = unsafe { &mut *core::ptr::addr_of_mut!(KERNEL_TABLES) };
+
         // Populate translation tables.
-        KERNEL_TABLES
+        kernel_tables
             .populate_tt_entries()
             .map_err(MMUEnableError::Other)?;
 
         // Set the "Translation Table Base Register".
-        TTBR0_EL1.set_baddr(KERNEL_TABLES.phys_base_address());
+        TTBR0_EL1.set_baddr(kernel_tables.phys_base_address());
 
         self.configure_translation_control();
 
@@ -161,37 +169,6 @@ impl memory::mmu::interface::MMU for MemoryManagementUnit {
 
     #[inline(always)]
     fn is_enabled(&self) -> bool {
-        let enabled = SCTLR_EL1.matches_all(SCTLR_EL1::M::Enable);
-        enabled
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-// Testing
-//--------------------------------------------------------------------------------------------------
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use core::{cell::UnsafeCell, ops::Range};
-    use test_macros::kernel_test;
-
-    /// Check if KERNEL_TABLES is in .bss.
-    #[kernel_test]
-    fn kernel_tables_in_bss() {
-        extern "Rust" {
-            static __bss_start: UnsafeCell<u64>;
-            static __bss_end_exclusive: UnsafeCell<u64>;
-        }
-
-        let bss_range = unsafe {
-            Range {
-                start: __bss_start.get(),
-                end: __bss_end_exclusive.get(),
-            }
-        };
-        let kernel_tables_addr = unsafe { &KERNEL_TABLES as *const _ as usize as *mut u64 };
-
-        assert!(bss_range.contains(&kernel_tables_addr));
+        SCTLR_EL1.matches_all(SCTLR_EL1::M::Enable)
     }
 }

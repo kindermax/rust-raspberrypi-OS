@@ -19,9 +19,6 @@ test_build = ["qemu-exit"]
 ##--------------------------------------------------------------------------------------------------
 
 [dependencies]
-test-types = { path = "../libraries/test-types" }
-
-# Optional dependencies
 tock-registers = { version = "0.9.x", default-features = false, features = [
     "register_types",
 ], optional = true }
@@ -31,27 +28,24 @@ qemu-exit = { version = "3.x.x", optional = true }
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 aarch64-cpu = { version = "10" }
 
-##--------------------------------------------------------------------------------------------------
-## Testing
-##--------------------------------------------------------------------------------------------------
-
-[dev-dependencies]
-test-macros = { path = "../libraries/test-macros" }
-
-# Unit tests are done in the library part of the kernel.
 [lib]
 name = "libkernel"
-test = true
+test = false
+bench = false
 
 # Disable unit tests for the kernel binary.
 [[bin]]
 name = "kernel"
 path = "src/main.rs"
 test = false
+bench = false
 
-# List of tests without harness.
+##--------------------------------------------------------------------------------------------------
+## Stable, harness-free integration test kernels
+##--------------------------------------------------------------------------------------------------
+
 [[test]]
-name = "00_console_sanity"
+name = "01_timer_sanity"
 harness = false
 
 [[test]]

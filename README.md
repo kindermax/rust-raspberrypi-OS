@@ -269,6 +269,35 @@ To restore chainloading later:
 
 `CHAINLOADER=1 RPI5_EARLY_UART= make copy-kernel-to-sdcard`
 
+### Stable kernel tests
+
+The kernel test path uses stable Rust and ordinary Cargo integration-test targets without the host
+test harness. Each test under `kernel/tests` is a small `no_std`, `no_main` kernel. A native Rust
+runner converts the test ELF into a boot image, supervises QEMU, propagates the guest exit status,
+and fails tests that exceed the timeout.
+
+The test commands require `qemu-system-aarch64` and `rust-objcopy` on `PATH`.
+
+Run the boot smoke test and all integration-test kernels on the QEMU-supported Raspberry Pi 3 BSP:
+
+```bash
+BSP=rpi3 make test
+```
+
+The targets can also be run separately, or a single integration test can be selected:
+
+```bash
+BSP=rpi3 make test_boot
+BSP=rpi3 make test_integration
+BSP=rpi3 TEST=01_timer_sanity make test_integration
+```
+
+Assertions fail through the kernel panic handler. Tests that intentionally provoke a panic call
+`test::expect_panic()` immediately before the faulting operation so only that panic is treated as
+success. RPi5 has no compatible QEMU machine in this repository, so its QEMU-backed test targets
+report that they are unavailable; RPi5 MMIO mapping invariants are checked at compile time and
+against the actual layout descriptors during kernel boot instead.
+
 ### Openocd
 
 ```bash

@@ -2,14 +2,30 @@
 //
 // Copyright (c) 2018-2023 Andre Richter <andre.o.richter@gmail.com>
 
-//! A panic handler that infinitely waits.
+//! Kernel panic handling for normal and QEMU test builds.
 
-use crate::{cpu, println};
+#[cfg(not(feature = "test_build"))]
+use crate::cpu;
+use crate::println;
 use core::panic::PanicInfo;
 
 //--------------------------------------------------------------------------------------------------
 // Private Code
 //--------------------------------------------------------------------------------------------------
+
+/// The point of exit for `libkernel`.
+#[no_mangle]
+fn _panic_exit() -> ! {
+    #[cfg(not(feature = "test_build"))]
+    {
+        cpu::wait_forever()
+    }
+
+    #[cfg(feature = "test_build")]
+    {
+        crate::test::exit_panic()
+    }
+}
 
 /// Stop immediately if called a second time.
 ///
@@ -31,13 +47,11 @@ fn panic_prevent_reenter() {
 
     static PANIC_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 
-    if !PANIC_IN_PROGRESS.load(Ordering::Relaxed) {
-        PANIC_IN_PROGRESS.store(true, Ordering::Relaxed);
-
+    if !PANIC_IN_PROGRESS.fetch_or(true, Ordering::AcqRel) {
         return;
     }
 
-    cpu::wait_forever()
+    _panic_exit()
 }
 
 #[panic_handler]
@@ -63,5 +77,5 @@ fn panic(info: &PanicInfo) -> ! {
         info.message(),
     );
 
-    cpu::wait_forever()
+    _panic_exit()
 }

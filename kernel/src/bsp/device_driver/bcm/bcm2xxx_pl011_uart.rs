@@ -143,7 +143,7 @@ register_bitfields! {
     ]
 }
 
-/// https://developer.arm.com/documentation/ddi0183/g/programmers-model/summary-of-registers
+// https://developer.arm.com/documentation/ddi0183/g/programmers-model/summary-of-registers
 register_structs! {
     #[allow(non_snake_case)]
     pub RegisterBlock {

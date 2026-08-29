@@ -9,12 +9,13 @@
 
 //! The `kernel` binary.
 
-#![feature(format_args_nl)]
 #![no_main]
 #![no_std]
 
 #[cfg(feature = "chainloader")]
 use libkernel as _;
+#[cfg(all(not(feature = "chainloader"), feature = "test_build"))]
+use libkernel::cpu;
 #[cfg(not(feature = "chainloader"))]
 use libkernel::{bsp, console, driver, exception, info, memory, time};
 
@@ -36,6 +37,11 @@ unsafe fn kernel_init() -> ! {
 
     if let Err(string) = memory::mmu::mmu().enable_mmu_and_caching() {
         panic!("MMU: {}", string);
+    }
+
+    #[cfg(feature = "bsp_rpi5")]
+    if let Err(string) = bsp::memory::mmu::validate_layout() {
+        panic!("MMU layout: {}", string);
     }
 
     // Initialize the BSP driver subsystem.
@@ -80,6 +86,11 @@ fn kernel_main() -> ! {
 
     // Discard any spurious received characters before going into echo mode.
     console().clear_rx();
+
+    #[cfg(feature = "test_build")]
+    cpu::qemu_exit_success();
+
+    #[cfg(not(feature = "test_build"))]
     loop {
         let c = console().read_char();
         console().write_char(c);

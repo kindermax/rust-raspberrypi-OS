@@ -13,26 +13,28 @@ use core::fmt;
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
+    #[allow(unused_imports)]
+    use console::interface::Write;
+
     console::console().write_fmt(args).unwrap();
 }
 
 /// Prints without a newline.
-///
-/// Carbon copy from <https://doc.rust-lang.org/src/std/macros.rs.html>
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::print::_print(format_args!($($arg)*)));
+    ($($arg:tt)*) => {{
+        $crate::print::_print(format_args!($($arg)*));
+    }};
 }
 
 /// Prints with a newline.
-///
-/// Carbon copy from <https://doc.rust-lang.org/src/std/macros.rs.html>
 #[macro_export]
 macro_rules! println {
     () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ({
-        $crate::print::_print(format_args_nl!($($arg)*));
-    })
+    ($($arg:tt)*) => {{
+        $crate::print::_print(format_args!($($arg)*));
+        $crate::println!();
+    }};
 }
 
 /// Prints an info, with a newline.
@@ -41,21 +43,21 @@ macro_rules! info {
     ($string:expr) => ({
         let timestamp = $crate::time::time_manager().uptime();
 
-        $crate::print::_print(format_args_nl!(
+        $crate::println!(
             concat!("[  {:>3}.{:06}] ", $string),
             timestamp.as_secs(),
             timestamp.subsec_micros(),
-        ));
+        );
     });
     ($format_string:expr, $($arg:tt)*) => ({
         let timestamp = $crate::time::time_manager().uptime();
 
-        $crate::print::_print(format_args_nl!(
+        $crate::println!(
             concat!("[  {:>3}.{:06}] ", $format_string),
             timestamp.as_secs(),
             timestamp.subsec_micros(),
             $($arg)*
-        ));
+        );
     })
 }
 
@@ -65,20 +67,20 @@ macro_rules! warn {
     ($string:expr) => ({
         let timestamp = $crate::time::time_manager().uptime();
 
-        $crate::print::_print(format_args_nl!(
+        $crate::println!(
             concat!("[W {:>3}.{:06}] ", $string),
             timestamp.as_secs(),
             timestamp.subsec_micros(),
-        ));
+        );
     });
     ($format_string:expr, $($arg:tt)*) => ({
         let timestamp = $crate::time::time_manager().uptime();
 
-        $crate::print::_print(format_args_nl!(
+        $crate::println!(
             concat!("[W {:>3}.{:06}] ", $format_string),
             timestamp.as_secs(),
             timestamp.subsec_micros(),
             $($arg)*
-        ));
+        );
     })
 }

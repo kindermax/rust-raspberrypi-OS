@@ -65,7 +65,6 @@ pub mod interface {
 static CUR_CONSOLE: NullLock<&'static (dyn interface::All + Sync)> =
     NullLock::new(&null_console::NULL_CONSOLE);
 
-
 //--------------------------------------------------------------------------------------------------
 // Public Code
 //--------------------------------------------------------------------------------------------------
