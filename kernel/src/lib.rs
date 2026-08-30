@@ -114,6 +114,8 @@
 #[cfg(all(feature = "chainloader", feature = "test_build"))]
 compile_error!("features `chainloader` and `test_build` cannot be enabled together");
 
+#[cfg(not(feature = "chainloader"))]
+mod backtrace;
 mod panic_wait;
 mod synchronization;
 

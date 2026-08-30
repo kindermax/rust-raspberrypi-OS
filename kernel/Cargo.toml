@@ -19,6 +19,11 @@ test_build = ["qemu-exit"]
 ##--------------------------------------------------------------------------------------------------
 
 [dependencies]
+unwinding = { version = "0.2", default-features = false, features = [
+    "unwinder",
+    "fde-static",
+    "hide-trace",
+] }
 tock-registers = { version = "0.9.x", default-features = false, features = [
     "register_types",
 ], optional = true }

@@ -77,5 +77,8 @@ fn panic(info: &PanicInfo) -> ! {
         info.message(),
     );
 
+    #[cfg(not(feature = "chainloader"))]
+    crate::backtrace::print_backtrace();
+
     _panic_exit()
 }
