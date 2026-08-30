@@ -1,9 +1,9 @@
 [workspace]
-resolver = "1"
+resolver = "2"
 
 members = [
-    "libraries/*",
-    "kernel"
+    "kernel",
+    "tools/kernel_test_runner"
 ]
 
 [profile.release]

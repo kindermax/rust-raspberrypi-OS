@@ -87,15 +87,12 @@ extern "C" fn current_el0_serror(_e: &mut ExceptionContext) {
 
 #[no_mangle]
 extern "C" fn current_elx_synchronous(e: &mut ExceptionContext) {
-    if e.fault_address_valid() {
-        let far_el1 = FAR_EL1.get();
-
-        // This catches the demo case for this tutorial. If the fault address happens to be 8 GiB,
-        // advance the exception link register for one instruction, so that execution can continue.
-        if far_el1 == 8 * 1024 * 1024 * 1024 {
-            e.elr_el1 += 4;
-
-            return;
+    #[cfg(feature = "test_build")]
+    {
+        if let Some(ESR_EL1::EC::Value::SVC64) = e.esr_el1.exception_class() {
+            if e.esr_el1.iss() == u64::from(crate::test::EXCEPTION_RESTORE_SVC_ID) {
+                return;
+            }
         }
     }
 
@@ -192,6 +189,12 @@ impl EsrEL1 {
     fn exception_class(&self) -> Option<ESR_EL1::EC::Value> {
         self.0.read_as_enum(ESR_EL1::EC)
     }
+
+    #[cfg(feature = "test_build")]
+    #[inline(always)]
+    fn iss(&self) -> u64 {
+        self.0.read(ESR_EL1::ISS)
+    }
 }
 
 /// Human readable ESR_EL1.
@@ -284,7 +287,6 @@ pub fn current_privilege_level() -> (PrivilegeLevel, &'static str) {
         _ => (PrivilegeLevel::Unknown, "Unknown"),
     }
 }
-
 
 /// Init exception handling by setting the exception vector base address register.
 ///

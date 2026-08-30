@@ -128,7 +128,26 @@ const _: () = {
     assert!(map::mmio::PL011_UART_START <= map::END_INCLUSIVE);
     assert!(map::mmio::PL011_EARLY_UART_START <= map::END_INCLUSIVE);
     assert!(map::mmio::GPIO_START <= map::END_INCLUSIVE);
+
+    assert!(
+        map::mmio::GPIO_PHYS_START + (map::mmio::GPIO_START - map::mmio::GPIO_VIRT_PAGE_START)
+            == map::mmio::GPIO_PHYS_START
+    );
 };
+
+#[cfg(all(feature = "bsp_rpi5", not(feature = "early-uart")))]
+const _: () = assert!(
+    map::mmio::ACTIVE_UART_PHYS_PAGE_START
+        + (map::mmio::PL011_UART_START - map::mmio::UART_VIRT_PAGE_START)
+        == map::mmio::PL011_UART_PHYS_START
+);
+
+#[cfg(all(feature = "bsp_rpi5", feature = "early-uart"))]
+const _: () = assert!(
+    map::mmio::ACTIVE_UART_PHYS_PAGE_START
+        + (map::mmio::PL011_EARLY_UART_START - map::mmio::UART_VIRT_PAGE_START)
+        == map::mmio::PL011_EARLY_UART_PHYS_START
+);
 
 //--------------------------------------------------------------------------------------------------
 // Private Code

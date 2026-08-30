@@ -132,77 +132,34 @@ pub fn virt_mem_layout() -> &'static KernelVirtualLayout<NUM_MEM_RANGES> {
     &LAYOUT
 }
 
-//--------------------------------------------------------------------------------------------------
-// Testing
-//--------------------------------------------------------------------------------------------------
+/// Validate that RPi5 driver addresses resolve through the configured MMIO descriptors.
+#[cfg(feature = "bsp_rpi5")]
+pub fn validate_layout() -> Result<(), &'static str> {
+    let uart_virtual = if cfg!(feature = "early-uart") {
+        memory_map::mmio::PL011_EARLY_UART_START
+    } else {
+        memory_map::mmio::PL011_UART_START
+    };
+    let uart_physical = if cfg!(feature = "early-uart") {
+        memory_map::mmio::PL011_EARLY_UART_PHYS_START
+    } else {
+        memory_map::mmio::PL011_UART_PHYS_START
+    };
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test_macros::kernel_test;
-
-    /// Check alignment of the kernel's virtual memory layout sections.
-    #[kernel_test]
-    fn virt_mem_layout_sections_are_64KiB_aligned() {
-        const SIXTYFOUR_KIB: usize = 65536;
-
-        for i in LAYOUT.inner().iter() {
-            let start: usize = *(i.virtual_range)().start();
-            let end: usize = *(i.virtual_range)().end() + 1;
-
-            assert_eq!(start % SIXTYFOUR_KIB, 0);
-            assert_eq!(end % SIXTYFOUR_KIB, 0);
-            assert!(end >= start);
-        }
+    let (mapped_uart, uart_attributes) = virt_mem_layout().virt_addr_properties(uart_virtual)?;
+    if mapped_uart != uart_physical
+        || !matches!(uart_attributes.mem_attributes, MemAttributes::Device)
+    {
+        return Err("RPi5 UART MMIO mapping is invalid");
     }
 
-    /// Ensure the kernel's virtual memory layout is free of overlaps.
-    #[kernel_test]
-    fn virt_mem_layout_has_no_overlaps() {
-        let layout = virt_mem_layout().inner();
-
-        for (i, first) in layout.iter().enumerate() {
-            for second in layout.iter().skip(i + 1) {
-                let first_range = first.virtual_range;
-                let second_range = second.virtual_range;
-
-                assert!(!first_range().contains(second_range().start()));
-                assert!(!first_range().contains(second_range().end()));
-                assert!(!second_range().contains(first_range().start()));
-                assert!(!second_range().contains(first_range().end()));
-            }
-        }
+    let (mapped_gpio, gpio_attributes) =
+        virt_mem_layout().virt_addr_properties(memory_map::mmio::GPIO_START)?;
+    if mapped_gpio != memory_map::mmio::GPIO_PHYS_START
+        || !matches!(gpio_attributes.mem_attributes, MemAttributes::Device)
+    {
+        return Err("RPi5 GPIO MMIO mapping is invalid");
     }
 
-    /// Ensure RPi 5 drivers use virtual MMIO addresses that resolve to the intended peripherals.
-    #[cfg(feature = "bsp_rpi5")]
-    #[kernel_test]
-    fn rpi5_driver_mmio_addresses_are_mapped() {
-        let uart_virt_addr = if cfg!(feature = "early-uart") {
-            memory_map::mmio::PL011_EARLY_UART_START
-        } else {
-            memory_map::mmio::PL011_UART_START
-        };
-        let uart_phys_addr = if cfg!(feature = "early-uart") {
-            memory_map::mmio::PL011_EARLY_UART_PHYS_START
-        } else {
-            memory_map::mmio::PL011_UART_PHYS_START
-        };
-
-        let (mapped_uart_addr, uart_attrs) = virt_mem_layout()
-            .virt_addr_properties(uart_virt_addr)
-            .unwrap();
-        assert_eq!(mapped_uart_addr, uart_phys_addr);
-        assert!(matches!(uart_attrs.mem_attributes, MemAttributes::Device));
-
-        let (mapped_gpio_addr, gpio_attrs) = virt_mem_layout()
-            .virt_addr_properties(memory_map::mmio::GPIO_START)
-            .unwrap();
-        assert_eq!(mapped_gpio_addr, memory_map::mmio::GPIO_PHYS_START);
-        assert!(matches!(gpio_attrs.mem_attributes, MemAttributes::Device));
-
-        // Keep the exception tutorial's page-fault address outside the translation regime.
-        let nine_gib = 9 * 1024 * 1024 * 1024;
-        assert!(virt_mem_layout().virt_addr_properties(nine_gib).is_err());
-    }
+    Ok(())
 }

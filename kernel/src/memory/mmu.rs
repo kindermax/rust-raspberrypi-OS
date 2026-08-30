@@ -250,10 +250,4 @@ impl<const NUM_SPECIAL_RANGES: usize> KernelVirtualLayout<{ NUM_SPECIAL_RANGES }
             info!("{}", i);
         }
     }
-
-    /// Returns ref to inner
-    #[cfg(test)]
-    pub fn inner(&self) -> &[TranslationDescriptor; NUM_SPECIAL_RANGES] {
-        &self.inner
-    }
 }

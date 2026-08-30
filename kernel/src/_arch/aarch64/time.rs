@@ -12,7 +12,7 @@
 //! crate::time::arch_time
 
 use crate::warn;
-use aarch64_cpu::{asm::barrier, registers::*};
+use aarch64_cpu::registers::*;
 use core::{
     num::{NonZeroU128, NonZeroU32, NonZeroU64},
     ops::{Add, Div},
@@ -81,7 +81,9 @@ impl From<GenericTimerCounterValue> for Duration {
         // The subsequent division ensures the result fits into u32, since the max result is smaller
         // than NANOSEC_PER_SEC. Therefore, just cast it to u32 using `as`.
         let sub_second_counter_value = counter_value.0 % frequency;
-        let nanos = unsafe { sub_second_counter_value.unchecked_mul(u64::from(NANOSEC_PER_SEC)) }
+        let nanos = sub_second_counter_value
+            .checked_mul(u64::from(NANOSEC_PER_SEC))
+            .expect("architectural timer nanosecond conversion overflowed")
             .div(frequency) as u32;
 
         Duration::new(secs, nanos)
@@ -109,8 +111,10 @@ impl TryFrom<Duration> for GenericTimerCounterValue {
 
         // This is safe, because frequency can never be greater than u32::MAX, and
         // (Duration::MAX.as_nanos() * u32::MAX) < u128::MAX.
-        let counter_value =
-            unsafe { duration.unchecked_mul(frequency) }.div(NonZeroU128::from(NANOSEC_PER_SEC));
+        let counter_value = duration
+            .checked_mul(frequency)
+            .ok_or("Conversion error. Duration too big")?
+            .div(NonZeroU128::from(NANOSEC_PER_SEC));
 
         // Since we checked above that we are <= max_duration(), just cast to u64.
         Ok(GenericTimerCounterValue(counter_value as u64))
